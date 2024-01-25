@@ -8,4 +8,5 @@ feedback link: https://github.com/startaiyo/swift-onboarding
 analytics account: Google Analytics ID
 
 # はじめに
-これはSwift初学者にswiftのアプリ作成を通じて大まかな知識を学んでもらうのが目的です
+## 概要
+- これはSwift初学者にswiftのアプリ作成を通じて大まかな知識を学んでもらうのが目的です
