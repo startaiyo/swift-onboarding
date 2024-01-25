@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2024-01-25T17:23:29+09:00",
+  "id": "startaiyo-swift-onboarding",
+  "duration": 0,
+  "title": "はじめに",
+  "summary": "swiftのオンボーディングプロジェクト",
+  "source": "Onboarding.md",
+  "theme": "",
+  "status": [
+    "ok"
+  ],
+  "category": [
+    "codelab",
+    "markdown"
+  ],
+  "tags": [
+    "web"
+  ],
+  "feedback": "https://github.com/startaiyo/swift-onboarding",
+  "ga": "Google Analytics ID",
+  "url": "startaiyo-swift-onboarding"
+}
