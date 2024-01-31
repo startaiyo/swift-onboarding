@@ -64,7 +64,61 @@
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
 <h2 is-upgraded>手順</h2>
+<p><strong>Xcodeのプロジェクトを作る</strong></p>
+<ol type="1">
+<li>Xcodeを開き、Create a new Xcode projectを選ぶ。</li>
+<li>iOS &gt; Appを選ぶ<br><img style="width: 350.00px" src="img/a3d0d34db85b9a38.png"></li>
+<li>任意の名前をつけ、プロジェクトを保存する。</li>
+</ol>
+<p><strong>GitHubのリポジトリを作る</strong></p>
+<ol type="1">
+<li>Source control navigator &gt; Repositories &gt; Remotes(画像参照)を右クリック<br><img style="width: 400.00px" src="img/e4e7f5352ba38890.png"></li>
+<li>New &#34;App名&#34; Remote...をクリックし、自分のGitHubアカウント情報を入力する。</li>
+<li>Personal access tokenについては、<a href="https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank">こちら</a> を参考にし、前手順で指定されたscopeを持ったPersonal access tokenを発行し、登録する。</li>
+</ol>
+<p>以上でGitHubとの連携は完了です。</p>
+<p><strong>画面表示のための下準備</strong></p>
+<ol type="1">
+<li>info.plistというファイルを開き、<code>Information Property List</code>内にある<code>Application Scene Manifest</code>をマイナスボタンで削除する。</li>
+<li>SceneDelegate.swiftを物理削除する。</li>
+<li>AppDelegateから以下の二つの関数を削除する。</li>
+</ol>
+<pre><code>func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -&gt; UISceneConfiguration {
+    // Called when a new scene session is being created.
+    // Use this method to select a configuration to create the new scene with.
+    return UISceneConfiguration(name: &#34;Default Configuration&#34;, sessionRole: connectingSceneSession.role)
+}
+
+func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set&lt;UISceneSession&gt;) {
+    // Called when the user discards a scene session.
+    // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
+    // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
+}
+</code></pre>
+<ol type="1" start="4">
+<li>AppDelegateクラス定義内に以下変数を追加する。 <code>var window: UIWindow?</code></li>
+<li>Main.storyboard, ViewControllerを削除する。</li>
+<li>図のようにAppの設定 &gt; TARGETSのアプリ名 &gt; Info &gt; Main storyboard file base name を削除する(写真は削除した後。) <img style="width: 500.00px" src="img/e1ec1b13845806d0.png"></li>
+<li>AppDelegateの<code>func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool</code> 内に</li>
+</ol>
+<pre><code>window = UIWindow(frame: UIScreen.main.bounds)
+let storyBoard = UIStoryboard(name: &#34;Login&#34;, bundle: nil)
+let loginVC = storyBoard.instantiateViewController(withIdentifier: &#34;LoginViewController&#34;)
+window?.rootViewController = loginVC
+window?.makeKeyAndVisible()
+</code></pre>
+<p>を追加します。次に、ログイン画面を作っていきます。</p>
+<p><strong>ログイン画面の作成</strong></p>
 <h2 is-upgraded>各技術の説明</h2>
+<p><strong>AppDelegate.swift</strong></p>
+<ul>
+<li>アプリ全体の変化に関わるイベントを処理するクラス。</li>
+<li>アプリ全体の起動/停止に伴って実行される<code>didFinishLaunchingWithOptions</code>, <code>applicationWillTerminate</code> だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。</li>
+</ul>
+<p><strong>SceneDelegate.swift</strong></p>
+<ul>
+<li>2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。</li>
+</ul>
 
 
       </google-codelab-step>
