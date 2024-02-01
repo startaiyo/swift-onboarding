@@ -63,6 +63,14 @@
 <li>storyboard</li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p>iPhone</p>
+</td><td colspan="1" rowspan="1"><p>iPad</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p class="image-container"><img alt="Alt text" src="img/ace8895bc9cd3911.png"></p>
+</td><td colspan="1" rowspan="1"><p class="image-container"><img alt="Alt text" src="img/fcb80c67476018e5.png"></p>
+</td></tr>
+</table>
 <h2 is-upgraded>手順</h2>
 <p><strong>Xcodeのプロジェクトを作る</strong></p>
 <ol type="1">
@@ -96,9 +104,16 @@ func application(_ application: UIApplication, didDiscardSceneSessions sceneSess
 }
 </code></pre>
 <ol type="1" start="4">
-<li>AppDelegateクラス定義内に以下変数を追加する。 <code>var window: UIWindow?</code></li>
+<li>AppDelegateクラス定義内に以下変数を追加する。</li>
+</ol>
+<pre><code>var window: UIWindow?
+</code></pre>
+<ol type="1" start="5">
 <li>Main.storyboard, ViewControllerを削除する。</li>
-<li>図のようにAppの設定 &gt; TARGETSのアプリ名 &gt; Info &gt; Main storyboard file base name を削除する(写真は削除した後。) <img style="width: 500.00px" src="img/e1ec1b13845806d0.png"></li>
+<li>図のようにAppの設定 &gt; TARGETSのApp名 &gt; Info &gt; Main storyboard file base name を削除する(写真は削除した後。)</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/e1ec1b13845806d0.png"></p>
+<ol type="1" start="7">
 <li>AppDelegateの<code>func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool</code> 内に</li>
 </ol>
 <pre><code>window = UIWindow(frame: UIScreen.main.bounds)
@@ -107,8 +122,124 @@ let loginVC = storyBoard.instantiateViewController(withIdentifier: &#34;LoginVie
 window?.rootViewController = loginVC
 window?.makeKeyAndVisible()
 </code></pre>
-<p>を追加します。次に、ログイン画面を作っていきます。</p>
+<p>を追加します。※このままでは動きません。 次に、ログイン画面を作っていきます。</p>
+<p><strong>ログイン画面の表示</strong></p>
+<ol type="1">
+<li>AppDelegateが含まれているApp名のディレクトリで右クリックし、New Groupを選択すると、新たなディレクトリが作れる。名前は&#34;Presentation&#34;(画面表示に関わるファイルを格納するディレクトリ)にする。</li>
+<li>Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する&#34;Login&#34;ディレクトリを作成する。</li>
+<li>Loginディレクトリで右クリックし、New Fileを選択 &gt; iOS &gt; User Interfaceにある&#34;Storyboard&#34;を選択。名前は&#34;Login&#34;にし、保存。</li>
+</ol>
+<ul>
+<li>すると、下記のような白地のiPhoneが出てくると思います。ここにパーツを置き、画面を完成させます。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/f3cd95cde10e7e1a.png"></p>
+<ol type="1" start="4">
+<li>LoginディレクトリでさらにNew File &gt; iOS &gt; SourceのSwift Fileを選択し、名前を<code>LoginViewController</code>にする。</li>
+<li>そして、デフォルトで存在する<code>import foundation</code>を削除したのちに以下のコードを記述し、LoginViewControllerクラスを作成する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class LoginViewController: UIViewController {}
+</code></pre>
+<ul>
+<li>これがコードとstoryboardを橋渡ししてくれます。</li>
+</ul>
+<ol type="1" start="6">
+<li>再びLogin.storyboardに戻り、左側のDocument Outlineの赤枠で囲ったView Controllerをクリック &gt; 右側のInspectorsの赤枠で囲ったCustom Class &gt; ClassからLoginViewControllerを選択。そして同じく赤枠のIdentity &gt; Storyboard IDにも同様に<code>LoginViewController</code>を入力。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/858e32bf1520242d.png"></p>
+<ul>
+<li>これでコード上から参照できるようになりました。</li>
+</ul>
+<ol type="1" start="7">
+<li>右上の赤枠で囲った&#34;➕&#34;ボタン(以下、library)をクリックすると画面に配置できるパーツ一覧が出てくる。まず&#34;Label&#34;をクリックしたまま離さず、白地のiPhoneの上でクリックを離すと、Labelと書かれたパーツが画面上に配置される。</li>
+</ol>
+<p class="image-container"><img style="width: 400.00px" src="img/8f5f3d90ac17e47.png"></p>
+<ol type="1" start="8">
+<li>ここで試しにXcode左上の再生ボタンを押してビルドしてみると、Labelと書かれた画面が出現する。</li>
+</ol>
+<p class="image-container"><img style="width: 200.00px" src="img/88dfa845e8d8a70d.png"></p>
+<ul>
+<li>これで画面表示まではされるようになりました。次に色々なパーツを組み合わせ、ログイン画面を作成していきます。</li>
+</ul>
 <p><strong>ログイン画面の作成</strong></p>
+<ol type="1">
+<li>libraryをクリックし、TextFieldを二つ、Buttonを一つ、先ほどのLabelの下に順に配置する。</li>
+</ol>
+<p class="image-container"><img style="width: 200.00px" src="img/8e86f82c3dd5d4ed.png"></p>
+<ul>
+<li>基本的に、storyboardはパーツが平面上のどこにあるのかを指定するだけで、ここでは見た目的な部分に修正は加えません。見た目はViewControllerから整えていきます。</li>
+</ul>
+<ol type="1" start="2">
+<li>Add Editor on Right(libraryの+ボタンの下、赤枠)によりxcodeの編集画面を2画面にし、片方のEditorをクリックした後LoginViewController.swiftファイルを開く。</li>
+<li>もう片方で開いているLogin.storyboard(開いてなければ開く)のLabelを、controlキーを押したままクリック離さずにLoginViewController.swiftファイル上ドラッグすると、図のように青い線と共に<code>Insert Outlet or Outlet Collection</code>と出てくる。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/2f93ef60aa144795.png"></p>
+<p>このタイミングでクリックを離し、StorageをStrongにし、nameを<code>titleLabel</code>にすると、自動的に</p>
+<pre><code>@IBOutlet var titleLabel: UILabel!
+</code></pre>
+<p>というコードが出現する。しかしこのインスタンスはクラス内からしか参照しないため、<code>@IBOutlet</code>と<code>var</code>の間に<code>private</code>を記述することでそれを明示する。 4. 同様に、上から順にprivateの@IBOutletプロパティである<code>emailField</code>, <code>passwordField</code>, <code>loginButton</code>を作成すると、<code>LoginViewController.swift</code>は以下のようなコードになる。</p>
+<pre><code>import UIKit
+
+final class LoginViewController: UIViewController {
+    @IBOutlet private var titleLabel: UILabel!
+    @IBOutlet private var emailField: UITextField!
+    @IBOutlet private var passwordField: UITextField!
+    @IBOutlet private var loginButton: UIButton!
+}
+</code></pre>
+<ol type="1" start="5">
+<li>各パーツのデザインを作る。まず、titleLabelのテキストを&#34;Login&#34;にしたいので、<code>titleLabel: UILabel!</code>のすぐ横から以下のコードを記述する。</li>
+</ol>
+<pre><code>@IBOutlet private var titleLabel: UILabel! {
+    didSet {
+        titleLabel.text = &#34;Login&#34;
+    }
+}
+</code></pre>
+<ul>
+<li>これで、LoginViewController上でtitleLabelがインスタンス化された(Setされた)際、titleLabelのtextが&#34;Login&#34;になることを示している。</li>
+</ul>
+<ol type="1" start="6">
+<li>同様に、各パーツの<code>didSet</code>内に下記を記述する。</li>
+</ol>
+<pre><code>// emailField内
+emailField.placeholder = &#34;email&#34;
+
+// passwordField内
+passwordField.placeholder = &#34;password&#34;
+
+// loginButton内
+loginButton.setTitle(&#34;Login&#34;,
+                                 for: .normal)
+</code></pre>
+<p><strong>各パーツの位置調整</strong></p>
+<ul>
+<li>以上の配置は、様々な画面の大きさがあるiOSに対して柔軟性に欠ける。例えば、iPad上に表示しようとした際には以下のようになってしまう。そのため、以下のAutoLayoutの設定を行うことにより、相対的な配置に変える必要がある。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/34e2d5538e20b52f.png"></p>
+<ol type="1">
+<li>まず、以下の手順ですべてのパーツを水平方向の中心に持っていきたい。Title Labelに対して、先程のようにcontrolボタンを押しながらドラッグして出てくる青いポインターを、上部のViewにまでドラッグすると、下図のような黒いポップアップが出てくる。これの&#34;Center Horizontally&#34;をクリックすると、CenterX(水平方向の中心に位置する)の制約(Constraint)が付与される。</li>
+</ol>
+<ul>
+<li>これはすなわち、View(画面全体)に対して、titleLabelは水平方向の中心に配置してください、という制限を我々がかけたことになる。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/175c06e5da3dbbec.png"></p>
+<ol type="1" start="2">
+<li>他のパーツについても同様にCenterXのConstraintをViewに対して付与する。</li>
+<li>続いて、以下の手順で全てのパーツをY軸方向に50ずつ離して配置する。まず、PasswordFieldにViewに対してCenter VerticallyのConstraintを付与する。</li>
+<li>3.で付与されたConstraintをクリックすると、図のようにConstraintの詳細を設定できる部分が開くので、こちらのConstantに25を入力する。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/82cc916360ee562f.png"></p>
+<ol type="1" start="5">
+<li>emailFieldから今度はpasswordFieldに対して、&#34;vertical spacing&#34;のconstraintを付与する。4.同様に付与されたConstraintを開き、Constantを50に設定する。</li>
+<li>同様にtitleLabelからemailField, loginbuttonからpasswordFieldに対してconstantが50のvertical spacingを付与する。</li>
+<li>テキストフィールドの幅が少し狭いので、emailField, passwordFieldそれぞれに対し、widthのconstantが220のconstraintを設定する。</li>
+</ol>
+<ul>
+<li>以上により、画面の大きさに関わらず、違和感のない配置にする事ができる。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/5bbfd2fa5d665fa1.png"></p>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>AppDelegate.swift</strong></p>
 <ul>
