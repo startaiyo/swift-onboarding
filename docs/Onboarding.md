@@ -218,7 +218,44 @@ loginButton.setTitle("Login",
 ### 各技術の説明
 **AppDelegate.swift**
 - アプリ全体の変化に関わるイベントを処理するクラス。
-- アプリ全体の起動/停止に伴って実行される`didFinishLaunchingWithOptions`, `applicationWillTerminate` だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。
+- アプリ全体の起動/停止に伴って実行される`didFinishLaunchingWithOptions`, `applicationWillTerminate` だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。  
+どのようなイベントがあるのか詳細は[App States](https://dena0.atlassian.net/wiki/spaces/SPD/pages/657044762/App+States)を参照してください。
+- 例えば、アプリを開いた際に画面ロックするかsessionの状態によって決めるメソッドを呼び出すなどで使われる。
+- ※Delegate(委譲)とは、自分と異なるクラスに何か処理をさせること。このAppDelegateは、アプリの中心であるUIApplicationのインスタンスがAppDelegateというクラスに上記の処理をDelegateしていると言える。
 
 **SceneDelegate.swift**
 - 2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。
+- 担っている処理はAppDelegateのアプリライフサイクルに対する処理と同様。
+
+**storyboard**
+- UI上でパーツを並べて画面を作るツール。
+- 中身はxibファイル(xmlで部品のレイアウトを記述したもの)となっており、この形でXcode上で認識される。
+- Swiftでは大きく分けてUIKit, SwiftUIの2種類のiPhoneアプリ作成用フレームワークがあり、こちらはそのうち前者で多用される。
+
+**AutoLayout**
+- 上下左右の4方向に大きさ・長さの制約をかけることで、各パーツのサイズをあらゆる画面の大きさに対応できるようにした方法。
+- いろんな種類の制約のかけ方がある。詳しくは[こちら](https://dena0.atlassian.net/wiki/spaces/SPD/pages/657492482/Storyboard+XIB)。
+
+### 各技術の理解
+**AppDelegate**
+
+AppDelegateの中に以下のコードを書き、コントロールセンターを開く→閉じる→アプリをバックグラウンドに入れる(注: アプリを終了させないこと)→戻る
+とすると、active→inactive→active→inactive→background→(inactive)→activeと呼ばれる事がわかる。
+ライフサイクルが[このようになっており](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle)、各遷移に伴ってAppDelegateの関数が呼ばれるためである。
+
+```
+// Inactive→Active
+func applicationDidBecomeActive(_ application: UIApplication) {
+    print("become active")
+}
+
+// Inactive→Background
+func applicationDidEnterBackground(_ application: UIApplication) {
+    print("enter background")
+}
+
+// Inactive→Background
+func applicationWillResignActive(_ application: UIApplication) {
+    print("become inactive")
+}
+```

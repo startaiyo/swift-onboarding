@@ -244,12 +244,44 @@ loginButton.setTitle(&#34;Login&#34;,
 <p><strong>AppDelegate.swift</strong></p>
 <ul>
 <li>アプリ全体の変化に関わるイベントを処理するクラス。</li>
-<li>アプリ全体の起動/停止に伴って実行される<code>didFinishLaunchingWithOptions</code>, <code>applicationWillTerminate</code> だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。</li>
+<li>アプリ全体の起動/停止に伴って実行される<code>didFinishLaunchingWithOptions</code>, <code>applicationWillTerminate</code> だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。<br> どのようなイベントがあるのか詳細は<a href="https://dena0.atlassian.net/wiki/spaces/SPD/pages/657044762/App+States" target="_blank">App States</a>を参照してください。</li>
+<li>例えば、アプリを開いた際に画面ロックするかsessionの状態によって決めるメソッドを呼び出すなどで使われる。</li>
+<li>※Delegate(委譲)とは、自分と異なるクラスに何か処理をさせること。このAppDelegateは、アプリの中心であるUIApplicationのインスタンスがAppDelegateというクラスに上記の処理をDelegateしていると言える。</li>
 </ul>
 <p><strong>SceneDelegate.swift</strong></p>
 <ul>
 <li>2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。</li>
+<li>担っている処理はAppDelegateのアプリライフサイクルに対する処理と同様。</li>
 </ul>
+<p><strong>storyboard</strong></p>
+<ul>
+<li>UI上でパーツを並べて画面を作るツール。</li>
+<li>中身はxibファイル(xmlで部品のレイアウトを記述したもの)となっており、この形でXcode上で認識される。</li>
+<li>Swiftでは大きく分けてUIKit, SwiftUIの2種類のiPhoneアプリ作成用フレームワークがあり、こちらはそのうち前者で多用される。</li>
+</ul>
+<p><strong>AutoLayout</strong></p>
+<ul>
+<li>上下左右の4方向に大きさ・長さの制約をかけることで、各パーツのサイズをあらゆる画面の大きさに対応できるようにした方法。</li>
+<li>いろんな種類の制約のかけ方がある。詳しくは<a href="https://dena0.atlassian.net/wiki/spaces/SPD/pages/657492482/Storyboard+XIB" target="_blank">こちら</a>。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+<p><strong>AppDelegate</strong></p>
+<p>AppDelegateの中に以下のコードを書き、コントロールセンターを開く→閉じる→アプリをバックグラウンドに入れる(注: アプリを終了させないこと)→戻る とすると、active→inactive→active→inactive→background→(inactive)→activeと呼ばれる事がわかる。 ライフサイクルが<a href="https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle" target="_blank">このようになっており</a>、各遷移に伴ってAppDelegateの関数が呼ばれるためである。</p>
+<pre><code>// Inactive→Active
+func applicationDidBecomeActive(_ application: UIApplication) {
+    print(&#34;become active&#34;)
+}
+
+// Inactive→Background
+func applicationDidEnterBackground(_ application: UIApplication) {
+    print(&#34;enter background&#34;)
+}
+
+// Inactive→Background
+func applicationWillResignActive(_ application: UIApplication) {
+    print(&#34;become inactive&#34;)
+}
+</code></pre>
 
 
       </google-codelab-step>
