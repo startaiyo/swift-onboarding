@@ -59,8 +59,10 @@
 <p>ダミーのログイン画面の作成を通じて、アプリ全体に関わる処理に関する知識を学びます。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
 <ul>
-<li>AppDelegate</li>
-<li>storyboard</li>
+<li><a href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate" target="_blank">AppDelegate</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uiscenedelegate" target="_blank">SceneDelegate</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uistoryboard" target="_blank">storyboard</a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/AutolayoutPG/index.html" target="_blank">AutoLayout</a></li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
 <table>
@@ -126,7 +128,7 @@ window?.makeKeyAndVisible()
 <p><strong>ログイン画面の表示</strong></p>
 <ol type="1">
 <li>AppDelegateが含まれているApp名のディレクトリで右クリックし、New Groupを選択すると、新たなディレクトリが作れる。名前は&#34;Presentation&#34;(画面表示に関わるファイルを格納するディレクトリ)にする。</li>
-<li>Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する&#34;Login&#34;ディレクトリを作成する。</li>
+<li>Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する&#34;LoginScene&#34;ディレクトリを作成する。</li>
 <li>Loginディレクトリで右クリックし、New Fileを選択 &gt; iOS &gt; User Interfaceにある&#34;Storyboard&#34;を選択。名前は&#34;Login&#34;にし、保存。</li>
 </ol>
 <ul>
@@ -253,6 +255,11 @@ loginButton.setTitle(&#34;Login&#34;,
 <li>2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。</li>
 <li>担っている処理はAppDelegateのアプリライフサイクルに対する処理と同様。</li>
 </ul>
+<p><strong>UIWindow</strong></p>
+<ul>
+<li>アプリの画面を表すクラス。</li>
+<li>このクラスのインスタンスにより画面上にパーツが配置され、またこれが画面上で起こるイベントを受け取る。</li>
+</ul>
 <p><strong>storyboard</strong></p>
 <ul>
 <li>UI上でパーツを並べて画面を作るツール。</li>
@@ -280,6 +287,80 @@ func applicationDidEnterBackground(_ application: UIApplication) {
 // Inactive→Background
 func applicationWillResignActive(_ application: UIApplication) {
     print(&#34;become inactive&#34;)
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第二章 メイン画面へ移動可能にする" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://medium.com/p/3960ad9a6d85" target="_blank">Coordinator</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank">NavigationController</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img alt="alt text" src="img/90ff2d194dc9deb3.png"></p>
+<h2 is-upgraded>手順</h2>
+<p><strong>メイン画面作成</strong></p>
+<ul>
+<li>まずは一章と同様の手順により、メイン画面である画像リスト画面ディレクトリ(ImageListScene)を作成していく。</li>
+</ul>
+<ol type="1">
+<li>ImageList.storyboardを作成し、&#34;+&#34;ボタンで<code>Collection View</code>を選択、画面いっぱいに広げ、SafeAreaに四方を合わせたConstraintを設定してください。<br><img alt="alt text" src="img/9e8efe7f1ab95d99.png"></li>
+<li><code>ImageListViewController.swift</code>を作成し、以下のコードを記述してください。</li>
+</ol>
+<pre><code>import UIKit
+
+final class ImageListViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = &#34;Image List&#34;
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>imageCollectionView</code>という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに<code>ImageListViewController</code>を入力する。</li>
+</ol>
+<p><strong>Coordinatorの作成</strong></p>
+<ul>
+<li>次にログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。</li>
+</ul>
+<ol type="1">
+<li><code>LoginCoordinator.swift</code>を<code>LoginScene</code>ディレクトリに作成し、以下のコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class LoginCoordinator {
+    private let window: UIWindow
+    private let navigationController = UINavigationController()
+
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    func start() {
+        showLogin(in: navigationController)
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>showLogin(in:)</code>はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。</li>
+</ol>
+<pre><code>// MARK: - Private Functions
+private extension LoginCoordinator {
+    func showLogin(in navigationController: UINavigationController) {
+        let storyboard = UIStoryboard(name: &#34;Login&#34;,
+                                      bundle: nil)
+        if let vc = storyboard.instantiateViewController(withIdentifier: &#34;LoginViewController&#34;) as? LoginViewController {
+            vc.delegate = self
+            navigationController.setViewControllers([vc],
+                                                    animated: true)
+            window.rootViewController = navigationController
+        }
+    }
 }
 </code></pre>
 

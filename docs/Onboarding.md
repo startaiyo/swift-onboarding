@@ -31,8 +31,10 @@ analytics account: Google Analytics ID
 ### 概要
 ダミーのログイン画面の作成を通じて、アプリ全体に関わる処理に関する知識を学びます。
 ### 本章で学ぶこと
-- AppDelegate
-- storyboard
+- [AppDelegate](https://developer.apple.com/documentation/uikit/uiapplicationdelegate)
+- [SceneDelegate](https://developer.apple.com/documentation/uikit/uiscenedelegate)
+- [storyboard](https://developer.apple.com/documentation/uikit/uistoryboard)
+- [AutoLayout](https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/AutolayoutPG/index.html)
 ### 完成イメージ
 
 |iPhone|iPad|
@@ -99,7 +101,7 @@ window?.makeKeyAndVisible()
 
 **ログイン画面の表示**
 1. AppDelegateが含まれているApp名のディレクトリで右クリックし、New Groupを選択すると、新たなディレクトリが作れる。名前は"Presentation"(画面表示に関わるファイルを格納するディレクトリ)にする。
-2. Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する"Login"ディレクトリを作成する。
+2. Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する"LoginScene"ディレクトリを作成する。
 3. Loginディレクトリで右クリックし、New Fileを選択 > iOS > User Interfaceにある"Storyboard"を選択。名前は"Login"にし、保存。  
 - すると、下記のような白地のiPhoneが出てくると思います。ここにパーツを置き、画面を完成させます。
 
@@ -227,6 +229,10 @@ loginButton.setTitle("Login",
 - 2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。
 - 担っている処理はAppDelegateのアプリライフサイクルに対する処理と同様。
 
+**UIWindow**
+- アプリの画面を表すクラス。
+- このクラスのインスタンスにより画面上にパーツが配置され、またこれが画面上で起こるイベントを受け取る。
+
 **storyboard**
 - UI上でパーツを並べて画面を作るツール。
 - 中身はxibファイル(xmlで部品のレイアウトを記述したもの)となっており、この形でXcode上で認識される。
@@ -257,5 +263,73 @@ func applicationDidEnterBackground(_ application: UIApplication) {
 // Inactive→Background
 func applicationWillResignActive(_ application: UIApplication) {
     print("become inactive")
+}
+```
+
+## 第二章 メイン画面へ移動可能にする
+### 概要
+ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
+### 本章で学ぶこと
+- [Coordinator](https://medium.com/p/3960ad9a6d85)
+- [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
+### 完成イメージ
+![alt text](images/image_2_1.png)
+
+### 手順
+**メイン画面作成**
+- まずは一章と同様の手順により、メイン画面である画像リスト画面ディレクトリ(ImageListScene)を作成していく。
+1. ImageList.storyboardを作成し、"+"ボタンで`Collection View`を選択、画面いっぱいに広げ、SafeAreaに四方を合わせたConstraintを設定してください。  
+  ![alt text](images/image_2_2.png)  
+2. `ImageListViewController.swift`を作成し、以下のコードを記述してください。
+
+```
+import UIKit
+
+final class ImageListViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Image List"
+    }
+}
+```
+
+3. `imageCollectionView`という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに`ImageListViewController`を入力する。
+
+**Coordinatorの作成**
+- 次にログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。
+1. `LoginCoordinator.swift`を`LoginScene`ディレクトリに作成し、以下のコードを記述する。
+
+```
+import UIKit
+
+final class LoginCoordinator {
+    private let window: UIWindow
+    private let navigationController = UINavigationController()
+
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    func start() {
+        showLogin(in: navigationController)
+    }
+}
+```
+
+2. `showLogin(in:)`はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。
+
+```
+// MARK: - Private Functions
+private extension LoginCoordinator {
+    func showLogin(in navigationController: UINavigationController) {
+        let storyboard = UIStoryboard(name: "Login",
+                                      bundle: nil)
+        if let vc = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController {
+            vc.delegate = self
+            navigationController.setViewControllers([vc],
+                                                    animated: true)
+            window.rootViewController = navigationController
+        }
+    }
 }
 ```
