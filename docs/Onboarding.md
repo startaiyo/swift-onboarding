@@ -311,7 +311,7 @@ func applicationWillResignActive(_ application: UIApplication) {
 - [Coordinator](https://medium.com/p/3960ad9a6d85)
 - [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
 ### 完成イメージ
-![alt text](images/image_2_1.png)
+<img src ="images/image_2_1.png" width = "300">
 
 ### 手順
 **メイン画面作成**
