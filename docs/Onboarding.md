@@ -81,6 +81,8 @@ func application(_ application: UIApplication, didDiscardSceneSessions sceneSess
 var window: UIWindow?
 ```
 
+- ?(オプショナル型)については後述
+
 5. Main.storyboard, ViewControllerを削除する。
 6. 図のようにAppの設定 > TARGETSのApp名 > Info > Main storyboard file base name を削除する(写真は削除した後。)
 
@@ -233,6 +235,42 @@ loginButton.setTitle("Login",
 - アプリの画面を表すクラス。
 - このクラスのインスタンスにより画面上にパーツが配置され、またこれが画面上で起こるイベントを受け取る。
 
+**オプショナル型**
+- 変数定義の際、クラス名の末尾に?をつけると、その変数がnil許容であることを示す。その状態ではその変数はラップされており、内部の値を使うためには以下のいずれかの方法でアンラップしてあげなくてはならない。
+
+1. `if let`構文
+
+```
+var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// varAがnilじゃない時のみ、アンラップしたvarAと共に{}内の処理を実行する。
+if let varA {
+    print(varA) // 出力: ClassA(...)
+}
+```
+
+2. `guard let`構文
+
+```
+var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// guardはその条件がtrueの場合のみ、その下の行に続く処理を継続できる構文。falseならelse以下の処理をすることになるため、ここではnilの場合にelseに行くことになる。
+guard let varA else { // nilの場合の処理 }
+print(varA) // 出力: ClassA(...)
+```
+
+3. フォースアンラップ(強制アンラップ)法(非推奨)
+
+```
+var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// !マークをつけるだけ。しかし、nilだとクラッシュするため、必ずアンラップできる事が保証できない場合、非推奨。
+print(varA!) // 出力: ClassA(...)
+```
+
 **storyboard**
 - UI上でパーツを並べて画面を作るツール。
 - 中身はxibファイル(xmlで部品のレイアウトを記述したもの)となっており、この形でXcode上で認識される。
@@ -316,7 +354,10 @@ final class LoginCoordinator {
 }
 ```
 
-2. `showLogin(in:)`はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。
+- NavigationControllerとは、ViewControllerをスタックさせ表示させるためのViewControllerです。詳しくは後述。
+
+2. `showLogin(in:)`はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。  
+※内部でしか使わない関数は必ずprivate拡張の中に入れる。そうすることで、関数が内部でしか使われていないことを明示でき、可読性が上がる。
 
 ```
 // MARK: - Private Functions
@@ -325,7 +366,6 @@ private extension LoginCoordinator {
         let storyboard = UIStoryboard(name: "Login",
                                       bundle: nil)
         if let vc = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController {
-            vc.delegate = self
             navigationController.setViewControllers([vc],
                                                     animated: true)
             window.rootViewController = navigationController
@@ -333,3 +373,292 @@ private extension LoginCoordinator {
     }
 }
 ```
+
+3. `AppDelegate`内の処理を書き換える。`didFinishLaunchingWithOptions`の中を以下に置き換え、クラス変数に`private var loginCoordinator: LoginCoordinator?`を追加する。
+
+```
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    // 一つのスクリーンを表すインスタンス。Keyになっているものがユーザーのアクションを受け取る。
+    window = UIWindow(frame: UIScreen.main.bounds)
+    window?.makeKeyAndVisible()
+    showLoginScreen()
+
+    return true
+}
+```
+
+4. `AppDelegate`のprivate関数として、`showLoginScreen()`を定義する。
+
+```
+func showLoginScreen() {
+    if let window,
+        loginCoordinator == nil {
+        loginCoordinator = LoginCoordinator(window: window)
+        loginCoordinator?.start()
+    }
+}
+```
+
+- これでCoordinatorがstartした際にLogin画面が立ち上がる、Coordinator基本パターンが出来上がりました。
+
+**メイン画面にCoordinateする**
+- いよいよCoordinatorの最大の特徴である、画面間の遷移を実装していきます。
+1. `ImageListScene`に`ImageListCoordinator.swift`を作成し、以下のコードを記述する。
+
+```
+import UIKit
+
+final class ImageListCoordinator {
+    // MARK: Private properties
+    private let navigationController: UINavigationController
+
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
+    }
+
+    func start() {
+        showImageListScreen()
+    }
+}
+
+private extension ImageListCoordinator {
+    func showImageListScreen() {
+        let storyboard = UIStoryboard(name: "ImageList",
+                                      bundle: nil)
+        if let viewController = storyboard.instantiateViewController(withIdentifier: "ImageListViewController") as? ImageListViewController {
+            navigationController.pushViewController(viewController,
+                                                    animated: true)
+        }
+    }
+}
+```
+
+- しかしこのままではLogin画面でのログインボタン押下イベントをImageListCoordinatorで検知する事ができません。コード上で両者が繋がっていないためです。ここで登場するのが、Delegateメソッドです。  
+`LoginCoordinator`に以下を記述します。
+
+```
+protocol LoginCoordinatorDelegate: AnyObject {
+    func goToMain()
+}
+
+final class LoginCoordinator {
+    ...
+    // MARK: Public properties
+    weak var delegate: LoginCoordinatorDelegate?
+    ...
+}
+
+private extension LoginCoordinator {
+    func showMain() {
+        delegate?.goToMain()
+    }
+}
+```
+
+- showMainを呼ぶと、delegate先でgoToMainの処理が実行されるようになりました。
+
+2. `AppDelegate`に下記を追記する。
+
+```
+...
+// MARK: - Private functions
+private extension AppDelegate {
+    func showLoginScreen() {
+        if let window,
+           loginCoordinator == nil {
+            loginCoordinator = LoginCoordinator(window: window)
+            loginCoordinator?.delegate = self // <-- 追記
+            loginCoordinator?.start()
+        }
+    }
+
+    func showImageList() {
+        let imageListCoordinator = ImageListCoordinator(navigationController: navigationController)
+        imageListCoordinator.start()
+    }
+    ...
+}
+
+...
+// MARK: - LoginCoordinatorDelegate
+extension AppDelegate: LoginCoordinatorDelegate {
+    func goToMain() {
+        showImageList()
+    }
+}
+```
+
+- これでLoginCoordinatorのdelegateにAppDelegateが入ることにより、LoginCoordinatorで`goToMain`が実行された場合、Delegate先である`AppDelegate`で`showImageList()`が実行されるようになりました。
+
+3. `LoginViewController`でボタンの処理を追記する。
+
+```
+protocol LoginViewControllerDelegate: AnyObject {
+    func LoginViewControllerDidRequestToShowMainScreen()
+}
+
+final class LoginViewController: UIViewController {
+    weak var delegate: LoginViewControllerDelegate?
+    ...
+    @IBOutlet private var loginButton: UIButton! {
+        didSet {
+            loginButton.setTitle("Login",
+                                 for: .normal)
+            loginButton.addAction(.init { [weak self] _ in
+                self?.delegate?.LoginViewControllerDidRequestToShowMainScreen()
+            },
+                                  for: .touchUpInside)
+        }
+    }
+}
+```
+
+4. 最後に、`LoginViewController.swift`のDelegate処理を`LoginCoordinator`に委譲するために、`LoginCoordinator.swift`に以下を記述する。
+
+```
+// MARK: - LoginViewControllerDelegate
+extension LoginCoordinator: LoginViewControllerDelegate {
+    func LoginViewControllerDidRequestToShowMainScreen() {
+        showImageList()
+    }
+}
+```
+
+- こうすることで、loginButton押下時にimageList画面に遷移する事ができるようになりました。
+
+**タブバーの実装**
+- これでCoordinatorによってLogin画面からImageList画面に遷移できるようになりましたが、本アプリは複数のメイン画面から構成されるため、切り替えを簡単にするためのタブバーを実装しましょう。
+
+1. `BaseTabScene`を作成し、`BaseTabViewController.swift`を作成、以下のコードを記述する。
+
+```
+import UIKit
+
+final class BaseTabViewController: UITabBarController {
+    class func initialize(navigationControllers: [UINavigationController]) -> BaseTabViewController {
+        let viewController = BaseTabViewController()
+        viewController.setViewControllers(navigationControllers,
+                                          animated: false)
+        viewController.setupUI()
+        return viewController
+    }
+}
+
+// MARK: - Private properties
+private extension BaseTabViewController {
+    func setupUI() {
+        setupTabBar()
+    }
+
+    func setupTabBar() {
+        let appearance = UITabBarAppearance()
+        appearance.backgroundColor = .yellow
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+        tabBar.isTranslucent = false
+        tabBar.tintColor = .black
+    }
+}
+```
+- UITabBarControllerの構成→setViewControllersにより設定されたNavigationController全てについてタブを作成します。タブごとのタイトル、画像は各ViewControllerで実装します。
+
+2. `BaseTabCoordinator.swift`を作成、以下のコードを記述する。
+```
+import UIKit
+
+final class BaseTabCoordinator {
+    // MARK: Private properties
+    private let window: UIWindow
+    private var rootViewController: BaseTabViewController?
+
+    private lazy var imageListNavigationController: UINavigationController = {
+        let navigationController = UINavigationController()
+        setupNavigationViewController(navigationController)
+        navigationController.tabBarItem.title = "Image List"
+        navigationController.tabBarItem.image = UIImage(systemName: "photo")
+        return navigationController
+    }()
+
+    private lazy var imageListCoordinator: ImageListCoordinator = {
+        let coordinator = ImageListCoordinator(navigationController: imageListNavigationController)
+        return coordinator
+    }()
+
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    func start() {
+        let viewControllers = [imageListNavigationController]
+        rootViewController = BaseTabViewController.initialize(navigationControllers: viewControllers)
+        window.rootViewController = rootViewController
+        imageListCoordinator.start()
+    }
+}
+
+// MARK: - Private functions
+private extension BaseTabCoordinator {
+    func setupNavigationViewController(_ navigationController: UINavigationController) {
+        navigationController.navigationBar.isTranslucent = false
+        let appearance = UINavigationBarAppearance()
+        appearance.backgroundColor = .yellow
+        navigationController.navigationBar.standardAppearance = appearance
+        // これを設定しないと、スクロールし切った状態(スクロールできない状態を含む)のナビゲーションバーがdefault設定(真っ黒)になる。
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+    }
+}
+```
+
+- lazyとは、{}内の処理が全て終わった後にその変数を使用するための修飾子です。詳しくは後述。
+
+3. ImageListに直接遷移していた処理を全てBaseTab経由に変更します。
+- まず、`LoginViewController.swift`の変更をします。
+  - `LoginViewControllerDidRequestToShowMainScreen`を右クリック(どこのものでも大丈夫です)→ Refactor > Rename →`LoginViewControllerDidRequestToShowBaseTabScreen`に変更
+
+- 次に、`LoginCoordinator.swift`を変更します。
+  - `goToMain`をRefactorで`goToTabBar`に変更
+  - `showImageList`をRefactorで`showBaseTabScreen`に変更
+  - `showBaseTabScreen`の中身を下記に変更
+
+```
+func showBaseTabScreen() {
+    delegate?.goToTabBar()
+}
+```
+
+- 最後に、`AppDelegate.swift`を変更します。
+
+```
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    ...
+    private var baseTabCoordinator: BaseTabCoordinator?
+    ...
+}
+
+// MARK: - Private functions
+private extension AppDelegate {
+    func showLoginScreen() {
+        ...
+        baseTabCoordinator = nil
+    }
+
+    func showBaseTabScreen() {
+        if let window,
+           baseTabCoordinator == nil {
+            baseTabCoordinator = BaseTabCoordinator(window: window)
+            baseTabCoordinator?.start()
+        }
+        loginCoordinator = nil
+    }
+}
+
+// MARK: - LoginCoordinatorDelegate
+extension AppDelegate: LoginCoordinatorDelegate {
+    func goToTabBar() {
+        showBaseTabScreen()
+    }
+}
+
+```
+
+- これでMain画面がTabBarに内包されたImageListになりました。
