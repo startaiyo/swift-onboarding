@@ -14,18 +14,20 @@ analytics account: Google Analytics ID
 - [Swiftのロードマップ](https://medium.com/@andres.carort/ios-developer-roadmap-2023-330fd5cb7479)に基づき、Swiftの網羅的な知識を実装レベルにまで持っていってもらう。
 ### 学習内容
 1. ログイン画面を表示する。<!-- AppDelegate、storyboardの説明と最初の画面表示 -->
-2. メイン画面へ移動可能にする。<!-- Coordinator、NavigationControllerの説明と遷移 -->
-3. メイン画面にデータを表示する。 <!-- MVVMでデータ表示のためのファイル分割 -->
+2. メイン画面にデータを表示する。 <!-- MVVMでデータ表示のためのファイル分割 -->
+3. メイン画面へ移動可能にする。<!-- Coordinator、NavigationControllerの説明と遷移 -->
 4. APIを叩いてデータを取得する。 <!-- Services/Modelの作成でデータ取得 -->
 5. データを保存する。<!-- Realmやfirebaseを使ってlocal/remoteにデータ保存 -->
 6. 取得したデータをリアルタイムで更新する。<!-- Async awaitで取得データのリアルタイム反映 -->
-7. ログイン機能を作る。<!-- firebase authで作ってみる -->
+7. エラーを表示する <!-- エラーハンドリング -->
 8. チャット画面を作ってみる <!-- SwiftUIを使う -->
-9. エラーを表示する <!-- エラーハンドリング -->
+9. ログイン機能を作る。<!-- firebase authで作ってみる -->
 10. <!-- 未定。他の技術を試しに使ってみる。 -->
+
 ### 必要な準備
 - [Xcode](https://developer.apple.com/xcode/) *必須
-- [fork](https://git-fork.com/)
+  - Versionは15.2
+- Apple Developerアカウント
 
 ## 第一章 ログイン画面を表示する
 ### 概要
@@ -304,15 +306,11 @@ func applicationWillResignActive(_ application: UIApplication) {
 }
 ```
 
-## 第二章 メイン画面へ移動可能にする
+## 第二章 メイン画面にデータを表示する。
 ### 概要
-ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
+メイン画面およびそこに表示するデータを作成し、MVVMパターンというデータ表示とデータ作成部分を分割するアーキテクチャを学びます。
 ### 本章で学ぶこと
-- [Coordinator](https://medium.com/p/3960ad9a6d85)
-- [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
 ### 完成イメージ
-<img src ="images/image_2_1.png" width = "300">
-
 ### 手順
 **メイン画面作成**
 - まずは一章と同様の手順により、メイン画面である画像リスト画面ディレクトリ(ImageListScene)を作成していく。
@@ -333,6 +331,17 @@ final class ImageListViewController: UIViewController {
 
 3. `imageCollectionView`という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに`ImageListViewController`を入力する。
 
+
+## 第三章 メイン画面へ移動可能にする
+### 概要
+ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
+### 本章で学ぶこと
+- [Coordinator](https://medium.com/p/3960ad9a6d85)
+- [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
+### 完成イメージ
+<img src ="images/image_2_1.png" width = "300">
+
+### 手順
 **Coordinatorの作成**
 - 次にログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。
 1. `LoginCoordinator.swift`を`LoginScene`ディレクトリに作成し、以下のコードを記述する。

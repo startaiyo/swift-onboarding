@@ -36,19 +36,22 @@
 <h2 is-upgraded>学習内容</h2>
 <ol type="1">
 <li>ログイン画面を表示する。</li>
-<li>メイン画面へ移動可能にする。</li>
 <li>メイン画面にデータを表示する。 </li>
+<li>メイン画面へ移動可能にする。</li>
 <li>APIを叩いてデータを取得する。 </li>
 <li>データを保存する。</li>
 <li>取得したデータをリアルタイムで更新する。</li>
-<li>ログイン機能を作る。</li>
-<li>チャット画面を作ってみる </li>
 <li>エラーを表示する </li>
+<li>チャット画面を作ってみる </li>
+<li>ログイン機能を作る。</li>
 </ol>
 <h2 is-upgraded>必要な準備</h2>
 <ul>
-<li><a href="https://developer.apple.com/xcode/" target="_blank">Xcode</a> *必須</li>
-<li><a href="https://git-fork.com/" target="_blank">fork</a></li>
+<li><a href="https://developer.apple.com/xcode/" target="_blank">Xcode</a> *必須 <ul>
+<li>Versionは15.2</li>
+</ul>
+</li>
+<li>Apple Developerアカウント</li>
 </ul>
 
 
@@ -330,16 +333,11 @@ func applicationWillResignActive(_ application: UIApplication) {
 
       </google-codelab-step>
     
-      <google-codelab-step label="第二章 メイン画面へ移動可能にする" duration="0">
+      <google-codelab-step label="第二章 メイン画面にデータを表示する。" duration="0">
         <h2 is-upgraded>概要</h2>
-<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<p>メイン画面およびそこに表示するデータを作成し、MVVMパターンというデータ表示とデータ作成部分を分割するアーキテクチャを学びます。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
-<ul>
-<li><a href="https://medium.com/p/3960ad9a6d85" target="_blank">Coordinator</a></li>
-<li><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank">NavigationController</a></li>
-</ul>
 <h2 is-upgraded>完成イメージ</h2>
-<p class="image-container"><img style="width: 300.00px" src="img/674ff8004c97f3f9.png"></p>
 <h2 is-upgraded>手順</h2>
 <p><strong>メイン画面作成</strong></p>
 <ul>
@@ -361,6 +359,21 @@ final class ImageListViewController: UIViewController {
 <ol type="1" start="3">
 <li><code>imageCollectionView</code>という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに<code>ImageListViewController</code>を入力する。</li>
 </ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第三章 メイン画面へ移動可能にする" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://medium.com/p/3960ad9a6d85" target="_blank">Coordinator</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank">NavigationController</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/674ff8004c97f3f9.png"></p>
+<h2 is-upgraded>手順</h2>
 <p><strong>Coordinatorの作成</strong></p>
 <ul>
 <li>次にログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。</li>
