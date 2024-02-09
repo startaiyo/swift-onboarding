@@ -311,6 +311,8 @@ func applicationWillResignActive(_ application: UIApplication) {
 メイン画面およびそこに表示するデータを作成し、MVVMパターンというデータ表示とデータ作成部分を分割するアーキテクチャを学びます。
 ### 本章で学ぶこと
 ### 完成イメージ
+<img src ="images/image_2_1.png" width = "300">
+
 ### 手順
 **メイン画面作成**
 - まずは一章と同様の手順により、メイン画面である画像リスト画面ディレクトリ(ImageListScene)を作成していく。
@@ -324,12 +326,90 @@ import UIKit
 final class ImageListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Image List"
     }
 }
 ```
 
 3. `imageCollectionView`という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに`ImageListViewController`を入力する。
+4. `AppDelegate`で最初の画面を一旦上記ImageViewControllerに置き換える。
+- `didFinishLaunchingWithOptions`内を以下に書き換えてください。
+
+```
+window = UIWindow(frame: UIScreen.main.bounds)
+window?.makeKeyAndVisible()
+let storyboard = UIStoryboard(name: "ImageList",
+                                bundle: nil)
+if let viewController = storyboard.instantiateViewController(withIdentifier: "ImageListViewController") as? ImageListViewController {
+    window?.rootViewController = viewController
+}
+
+return true
+```
+
+**CollectionViewにデータを表示する**
+- このままではまだ白い画面が映っているだけだと思います。以下の手順により、セルに表示するデータを作成します。
+1. `Views`、`ViewModels`、`ViewControllers`というフォルダを`ImageListScene`配下に作成し、`ViewControllers`の中に、上記で作成したstoryboardとViewControllerファイルを入れる。
+
+- この`ViewModels`がデータとモデルをつなげる橋渡しをします。
+
+2. `Views`配下で、ファイル作成時に`Empty`を選び、`ImageListCell`と入力し、xibファイルを作成する。上記で作成できたxibファイルに"+"から、CollectionViewに表示するセルである`Collection View Cell`を選び、適当な場所に配置する。そこへ`Image View`、`Label`を入れ、以下のようにConstraintを付加する。`Custom Class`の`Class`部分と`Collection Reusable View`の`Identifier`に`ImageListCell`を入力する。
+
+<img src ="images/image_2_3.png" width = "300">
+
+3. 同じく`Views`配下に、`ImageListCell.swift`を作成。以下コードを入力、IBOutletを作成する。
+
+```
+import UIKit
+
+final class ImageListCell: UICollectionViewCell {
+    // MARK: Public properties
+    var viewModel: ImageListCellViewModelProtocol! {
+        didSet {
+            setupBindings()
+        }
+    }
+
+    @IBOutlet private var imageView: UIImageView! {
+        didSet {
+            imageView.contentMode = .scaleAspectFill
+        }
+    }
+    @IBOutlet private var titleLabel: UILabel! {
+        didSet {
+            titleLabel.textAlignment = .center
+        }
+    }
+
+    override func awakeFromNib() {
+        setupUI()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListCell {
+    func setupUI() {
+        backgroundColor = .lightGray
+        layer.cornerRadius = 10
+    }
+
+    func setupBindings() {
+        setImage()
+        titleLabel.text = viewModel.title
+    }
+
+    func setImage() {
+        Task {
+            imageView.image = UIImage(data: try await viewModel.imageData)
+        }
+    }
+}
+```
+
+
+1. まず、UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
+
+```
+```
 
 
 ## 第三章 メイン画面へ移動可能にする
@@ -339,7 +419,6 @@ final class ImageListViewController: UIViewController {
 - [Coordinator](https://medium.com/p/3960ad9a6d85)
 - [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
 ### 完成イメージ
-<img src ="images/image_2_1.png" width = "300">
 
 ### 手順
 **Coordinatorの作成**
