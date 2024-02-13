@@ -435,10 +435,137 @@ private extension ImageListCell {
     }
 }
 </code></pre>
-<ol type="1">
-<li>まず、UICollectionViewに表示するデータを扱うクラスである、<code>ImageListViewController+ImageDataSource.swift</code>を作成し、以下コードを記述する。</li>
+<ol type="1" start="4">
+<li>UICollectionViewに表示するデータを扱うクラスである、<code>ImageListViewController+ImageDataSource.swift</code>を作成し、以下コードを記述する。</li>
 </ol>
-<pre><code></code></pre>
+<pre><code>import UIKit
+
+final class ImageDataSource: UICollectionViewDiffableDataSource&lt;Int, ImageListCellViewModel&gt; {
+    init(_ collectionView: UICollectionView) {
+        super.init(collectionView: collectionView) { collectionView, indexPath, viewModel in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: &#34;ImageListCell&#34;,
+                                                                for: indexPath) as? ImageListCell
+            else {
+                fatalError(&#34;Failed to dequeue cell with reuse identifier ImageListCell&#34;)
+            }
+            cell.viewModel = viewModel
+            return cell
+        }
+    }
+}
+
+// MARK: - Public functions
+extension ImageDataSource {
+    func apply(_ items: [ImageListCellViewModel]) {
+        var snapshot = NSDiffableDataSourceSnapshot&lt;Int, ImageListCellViewModel&gt;()
+        snapshot.appendSections([0])
+        snapshot.appendItems(items)
+
+        DispatchQueue.main.async {
+            self.apply(snapshot,
+                       animatingDifferences: false)
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは<a href="https://qiita.com/startaiyo/items/61cdad04b53b1a740a90" target="_blank">こちら</a></li>
+</ul>
+<ol type="1" start="5">
+<li>いよいよデータ部分とViewを結合する、ViewModelを実装する。<code>ViewModels</code>中配下に<code>ImageListViewModel.swift</code>, <code>ImageListCellViewModel.swift</code>を作成する。</li>
+<li><code>ImageListViewModel.swift</code>に下記コードを記述する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] { get }
+}
+
+typealias ImageListViewModelProtocol = ImageListViewModelOutput
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private var data = [ImageListCellViewModel]()
+
+    init() {
+        fetchData()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    func fetchData() {
+        // 一旦はダミーデータで実装
+        var dummy = [ImageListCellViewModel]()
+        for i in 0..&lt;12 {
+            dummy.append(.init(input: .init(title: &#34;title \(i)&#34;,
+                                            imageURLString: &#34;https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=bc01c83c3da0425e9baa6c7a9204af81&#34;)))
+        }
+        data = dummy
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
+    }
+}
+</code></pre>
+<ol type="1" start="7">
+<li><code>ImageListCellViewModel.swift</code>に下記コードを記述する。</li>
+</ol>
+<pre><code>import Foundation
+
+protocol ImageListCellViewModelOutput {
+    var imageData: Data { get async throws }
+    var title: String { get }
+    var imageURLString: String { get }
+}
+
+typealias ImageListCellViewModelProtocol = ImageListCellViewModelOutput
+
+extension ImageListCellViewModel {
+    struct Input {
+        let title: String
+        let imageURLString: String
+    }
+}
+
+final class ImageListCellViewModel: Hashable {
+    // MARK: Private properties
+    let input: Input
+
+    init(input: Input) {
+        self.input = input
+    }
+}
+
+// MARK: - ImageListCellViewModelOutput
+extension ImageListCellViewModel: ImageListCellViewModelOutput {
+    var imageData: Data {
+        get async throws {
+        guard let url = URL(string: input.imageURLString) else {
+            throw NSError()
+        }
+        let (data, _) = try await URLSession.shared.data(for: .init(url: url))
+        return data
+    }
+    }
+
+    var title: String {
+        return input.title
+    }
+
+    var imageURLString: String {
+        return input.imageURLString
+    }
+}
+</code></pre>
+<ol type="1" start="8">
+<li>データの結合(binding)をsetする。</li>
+</ol>
+<ul>
+<li>これでデータが表示されるようになりました。</li>
+</ul>
 
 
       </google-codelab-step>

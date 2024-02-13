@@ -406,11 +406,136 @@ private extension ImageListCell {
 ```
 
 
-1. まず、UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
+4. UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
 
 ```
+import UIKit
+
+final class ImageDataSource: UICollectionViewDiffableDataSource<Int, ImageListCellViewModel> {
+    init(_ collectionView: UICollectionView) {
+        super.init(collectionView: collectionView) { collectionView, indexPath, viewModel in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageListCell",
+                                                                for: indexPath) as? ImageListCell
+            else {
+                fatalError("Failed to dequeue cell with reuse identifier ImageListCell")
+            }
+            cell.viewModel = viewModel
+            return cell
+        }
+    }
+}
+
+// MARK: - Public functions
+extension ImageDataSource {
+    func apply(_ items: [ImageListCellViewModel]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Int, ImageListCellViewModel>()
+        snapshot.appendSections([0])
+        snapshot.appendItems(items)
+
+        DispatchQueue.main.async {
+            self.apply(snapshot,
+                       animatingDifferences: false)
+        }
+    }
+}
 ```
 
+- DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)
+
+5. いよいよデータ部分とViewを結合する、ViewModelを実装する。`ViewModels`中配下に`ImageListViewModel.swift`, `ImageListCellViewModel.swift`を作成する。
+6. `ImageListViewModel.swift`に下記コードを記述する。
+
+```
+protocol ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] { get }
+}
+
+typealias ImageListViewModelProtocol = ImageListViewModelOutput
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private var data = [ImageListCellViewModel]()
+
+    init() {
+        fetchData()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    func fetchData() {
+        // 一旦はダミーデータで実装
+        var dummy = [ImageListCellViewModel]()
+        for i in 0..<12 {
+            dummy.append(.init(input: .init(title: "title \(i)",
+                                            imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81")))
+        }
+        data = dummy
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
+    }
+}
+```
+
+7. `ImageListCellViewModel.swift`に下記コードを記述する。
+
+```
+import Foundation
+
+protocol ImageListCellViewModelOutput {
+    var imageData: Data { get async throws }
+    var title: String { get }
+    var imageURLString: String { get }
+}
+
+typealias ImageListCellViewModelProtocol = ImageListCellViewModelOutput
+
+extension ImageListCellViewModel {
+    struct Input {
+        let title: String
+        let imageURLString: String
+    }
+}
+
+final class ImageListCellViewModel: Hashable {
+    // MARK: Private properties
+    let input: Input
+
+    init(input: Input) {
+        self.input = input
+    }
+}
+
+// MARK: - ImageListCellViewModelOutput
+extension ImageListCellViewModel: ImageListCellViewModelOutput {
+    var imageData: Data {
+        get async throws {
+        guard let url = URL(string: input.imageURLString) else {
+            throw NSError()
+        }
+        let (data, _) = try await URLSession.shared.data(for: .init(url: url))
+        return data
+    }
+    }
+
+    var title: String {
+        return input.title
+    }
+
+    var imageURLString: String {
+        return input.imageURLString
+    }
+}
+```
+
+8. データの結合(binding)をsetする。
+
+- これでデータが表示されるようになりました。
 
 ## 第三章 メイン画面へ移動可能にする
 ### 概要
