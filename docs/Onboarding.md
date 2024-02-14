@@ -534,8 +534,37 @@ extension ImageListCellViewModel: ImageListCellViewModelOutput {
 ```
 
 8. データの結合(binding)をsetする。
+- `ImageListViewController.swift`
+    - `viewDidLoad`に`setupBindings()`を記述
+    - privateメソッドに`func setupBindings()`を定義し、以下を記述する。
+
+```
+func setupBindings() {
+    dataSource.apply(viewModel.rows)
+}
+```
+
+- `ImageListCell.swift`
+    - 同様にprivateメソッドに`func setupBindings()`を定義し、以下を記述。
+
+```
+func setupBindings() {
+    setImage()
+    titleLabel.text = viewModel.title
+}
+
+func setImage() {
+    Task {
+        imageView.image = UIImage(data: try await viewModel.imageData)
+    }
+}
+```
 
 - これでデータが表示されるようになりました。
+
+### 各技術の説明
+
+### 各技術の理解
 
 ## 第三章 メイン画面へ移動可能にする
 ### 概要
@@ -875,3 +904,5 @@ extension AppDelegate: LoginCoordinatorDelegate {
 ```
 
 - これでMain画面がTabBarに内包されたImageListになりました。
+
+

@@ -338,7 +338,7 @@ func applicationWillResignActive(_ application: UIApplication) {
 <p>メイン画面およびそこに表示するデータを作成し、MVVMパターンというデータ表示とデータ作成部分を分割するアーキテクチャを学びます。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
 <h2 is-upgraded>完成イメージ</h2>
-<p class="image-container"><img style="width: 300.00px" src="img/856f3941efbea9ff.png"></p>
+<p class="image-container"><img style="width: 300.00px" src="img/97ca0c9a23de328e.png"></p>
 <h2 is-upgraded>手順</h2>
 <p><strong>メイン画面作成</strong></p>
 <ul>
@@ -564,8 +564,38 @@ extension ImageListCellViewModel: ImageListCellViewModelOutput {
 <li>データの結合(binding)をsetする。</li>
 </ol>
 <ul>
+<li><code>ImageListViewController.swift</code><ul>
+<li><code>viewDidLoad</code>に<code>setupBindings()</code>を記述</li>
+<li>privateメソッドに<code>func setupBindings()</code>を定義し、以下を記述する。</li>
+</ul>
+</li>
+</ul>
+<pre><code>func setupBindings() {
+    dataSource.apply(viewModel.rows)
+}
+</code></pre>
+<ul>
+<li><code>ImageListCell.swift</code><ul>
+<li>同様にprivateメソッドに<code>func setupBindings()</code>を定義し、以下を記述。</li>
+</ul>
+</li>
+</ul>
+<pre><code>func setupBindings() {
+    setImage()
+    titleLabel.text = viewModel.title
+}
+
+func setImage() {
+    Task {
+        imageView.image = UIImage(data: try await viewModel.imageData)
+    }
+}
+</code></pre>
+<ul>
 <li>これでデータが表示されるようになりました。</li>
 </ul>
+<h2 is-upgraded>各技術の説明</h2>
+<h2 is-upgraded>各技術の理解</h2>
 
 
       </google-codelab-step>
