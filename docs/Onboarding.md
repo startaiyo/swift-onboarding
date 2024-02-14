@@ -358,17 +358,14 @@ return true
 
 3. 同じく`Views`配下に、`ImageListCell.swift`を作成。以下コードを入力、IBOutletを作成する。
 
+- UIの初期設定を行う`setupUI()`はImageListCellの中でしか使わない関数なので、private拡張の中に入れる。
+  - 内部でしか使わない関数は必ずprivate拡張の中に入れる。そうすることで、関数が内部でしか使われていないことを明示でき、可読性が上がる。
+
 ```
 import UIKit
 
 final class ImageListCell: UICollectionViewCell {
-    // MARK: Public properties
-    var viewModel: ImageListCellViewModelProtocol! {
-        didSet {
-            setupBindings()
-        }
-    }
-
+    // MARK: Private properties
     @IBOutlet private var imageView: UIImageView! {
         didSet {
             imageView.contentMode = .scaleAspectFill
@@ -391,98 +388,11 @@ private extension ImageListCell {
         backgroundColor = .lightGray
         layer.cornerRadius = 10
     }
-
-    func setupBindings() {
-        setImage()
-        titleLabel.text = viewModel.title
-    }
-
-    func setImage() {
-        Task {
-            imageView.image = UIImage(data: try await viewModel.imageData)
-        }
-    }
 }
 ```
+4. いよいよデータ部分とViewを結合する、ViewModelを実装する。`ViewModels`配下に、`ImageListCell`のViewModelである、`ImageListCellViewModel.swift`と`ImageListView`のViewModelである`ImageListViewModel.swift`を作成する。
 
-
-4. UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
-
-```
-import UIKit
-
-final class ImageDataSource: UICollectionViewDiffableDataSource<Int, ImageListCellViewModel> {
-    init(_ collectionView: UICollectionView) {
-        super.init(collectionView: collectionView) { collectionView, indexPath, viewModel in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageListCell",
-                                                                for: indexPath) as? ImageListCell
-            else {
-                fatalError("Failed to dequeue cell with reuse identifier ImageListCell")
-            }
-            cell.viewModel = viewModel
-            return cell
-        }
-    }
-}
-
-// MARK: - Public functions
-extension ImageDataSource {
-    func apply(_ items: [ImageListCellViewModel]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, ImageListCellViewModel>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(items)
-
-        DispatchQueue.main.async {
-            self.apply(snapshot,
-                       animatingDifferences: false)
-        }
-    }
-}
-```
-
-- DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)
-
-5. いよいよデータ部分とViewを結合する、ViewModelを実装する。`ViewModels`中配下に`ImageListViewModel.swift`, `ImageListCellViewModel.swift`を作成する。
-6. `ImageListViewModel.swift`に下記コードを記述する。
-
-```
-protocol ImageListViewModelOutput {
-    var rows: [ImageListCellViewModel] { get }
-}
-
-typealias ImageListViewModelProtocol = ImageListViewModelOutput
-
-final class ImageListViewModel {
-    // MARK: Private properties
-    private var data = [ImageListCellViewModel]()
-
-    init() {
-        fetchData()
-    }
-}
-
-// MARK: - Private functions
-private extension ImageListViewModel {
-    func fetchData() {
-        // 一旦はダミーデータで実装
-        var dummy = [ImageListCellViewModel]()
-        for i in 0..<12 {
-            dummy.append(.init(input: .init(title: "title \(i)",
-                                            imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81")))
-        }
-        data = dummy
-    }
-}
-
-// MARK: - ImageListViewModelOutput
-extension ImageListViewModel: ImageListViewModelOutput {
-    var rows: [ImageListCellViewModel] {
-        return data
-    }
-}
-```
-
-7. `ImageListCellViewModel.swift`に下記コードを記述する。
+5. `ImageListCellViewModel.swift`に下記を記述する。
 
 ```
 import Foundation
@@ -532,37 +442,201 @@ extension ImageListCellViewModel: ImageListCellViewModelOutput {
     }
 }
 ```
+- `"ViewModelクラス名前"Output`はViewに影響を及ぼす関数・変数を、`"ViewModelクラス名前"Input`は逆にViewから影響を及ぼされ、ViewModel内への影響を及ぼす関数・変数を記述するプロトコルである。(後者は今回は出てこないが、また後ほど出てくる。)
+- `ViewModel`で定義される変数・インスタンスはInputという構造体を定義し、そこから依存性注入する。
 
-8. データの結合(binding)をsetする。
-- `ImageListViewController.swift`
-    - `viewDidLoad`に`setupBindings()`を記述
-    - privateメソッドに`func setupBindings()`を定義し、以下を記述する。
-
-```
-func setupBindings() {
-    dataSource.apply(viewModel.rows)
-}
-```
-
-- `ImageListCell.swift`
-    - 同様にprivateメソッドに`func setupBindings()`を定義し、以下を記述。
+6. `ImageListViewModel.swift`に下記コードを記述する。
 
 ```
-func setupBindings() {
-    setImage()
-    titleLabel.text = viewModel.title
+protocol ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] { get }
 }
 
-func setImage() {
-    Task {
-        imageView.image = UIImage(data: try await viewModel.imageData)
+typealias ImageListViewModelProtocol = ImageListViewModelOutput
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private var data = [ImageListCellViewModel]()
+
+    init() {
+        fetchData()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    func fetchData() {
+        // 一旦はダミーデータで実装
+        var dummy = [ImageListCellViewModel]()
+        for i in 0..<12 {
+            dummy.append(.init(input: .init(title: "title \(i)",
+                                            imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81")))
+        }
+        data = dummy
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
     }
 }
 ```
 
-- これでデータが表示されるようになりました。
+7. まずは`ImageListCellViewModel`と`ImageListCell`のデータを結合(binding)するため、`ImageListCell.swift`に下記コードを追加する。
+
+```
+final class ImageListCell: UICollectionViewCell {
+    // MARK: Public properties
+    var viewModel: ImageListCellViewModelProtocol! {
+        didSet {
+            setupBindings()
+        }
+    }
+    ...
+}
+
+// MARK: - Private functions
+private extension ImageListCell {
+    ...
+    func setupBindings() {
+        setImage()
+        titleLabel.text = viewModel.title
+    }
+
+    func setImage() {
+        Task {
+            imageView.image = UIImage(data: try await viewModel.imageData)
+        }
+    }
+}
+
+```
+
+- これでviewModelのOutputのデータがViewに表示され(つまり、Viewに影響を及ぼし)ました。
+
+8. UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
+
+```
+import UIKit
+
+final class ImageDataSource: UICollectionViewDiffableDataSource<Int, ImageListCellViewModel> {
+    init(_ collectionView: UICollectionView) {
+        super.init(collectionView: collectionView) { collectionView, indexPath, viewModel in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageListCell",
+                                                                for: indexPath) as? ImageListCell
+            else {
+                fatalError("Failed to dequeue cell with reuse identifier ImageListCell")
+            }
+            // cellにviewModelを設定する。
+            cell.viewModel = viewModel
+            return cell
+        }
+    }
+}
+
+// MARK: - Public functions
+extension ImageDataSource {
+    func apply(_ items: [ImageListCellViewModel]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Int, ImageListCellViewModel>()
+        snapshot.appendSections([0])
+        snapshot.appendItems(items)
+
+        DispatchQueue.main.async {
+            self.apply(snapshot,
+                       animatingDifferences: false)
+        }
+    }
+}
+```
+
+- DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)
+- ここで`ImageListCellViewModel`と`ImageListCell`が結合する。
+
+
+9. `ImageListViewController.swift`で下記コードを記述し、dataSource、データの結合(binding)を設定する。
+
+```
+final class ImageListViewController: UIViewController {
+    // MARK: Public properties
+    var viewModel: ImageListViewModel!
+
+    @IBOutlet private var imageCollectionView: UICollectionView! {
+        didSet {
+            // CollectionView, TableViewにカスタムセルを表示するために必須の処理。
+            imageCollectionView.register(UINib(nibName: "ImageListCell",
+                                               bundle: nil),
+                                         forCellWithReuseIdentifier: "ImageListCell")
+        }
+    }
+    private lazy var dataSource = ImageDataSource(imageCollectionView)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupBindings()
+    }
+}
+
+private extension ImageListViewController {
+    func setupBindings() {
+        dataSource.apply(viewModel.rows)
+    }
+}
+```
+
+- これでデータが表示されるようになりましたが、CollectionViewのセルの見た目がかなりぐちゃぐちゃになっています。
+
+**CollectionViewの整形**
+- これの見た目をいい感じにしていきます。そのためには、`UICollectionViewFlowLayout`を使用します。
+1. `ImageListViewController.swift`に以下変数定義を記述する。
+
+```
+final class ImageListViewController: UIViewController {
+    ...
+    private lazy var collectionViewLayout: UICollectionViewFlowLayout = {
+        let margin: CGFloat = 15
+        let spacing: CGFloat = 10
+        let itemHeight: CGFloat = 125
+        let screenWidth = view.frame.size.width
+        let itemsPerRow: CGFloat = 3
+        let totalMargin = margin * 2
+        let totalSpacing = spacing * (itemsPerRow - 1)
+        let itemWidth: CGFloat = (screenWidth - totalMargin - totalSpacing) / itemsPerRow
+
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = spacing
+        layout.minimumInteritemSpacing = spacing
+        layout.itemSize = CGSize(width: itemWidth,
+                                 height: itemHeight)
+        layout.sectionInset = UIEdgeInsets(top: margin,
+                                           left: margin,
+                                           bottom: margin,
+                                           right: margin)
+        return layout
+    }()
+}
+```
+
+2. 1.をCollectionViewのdidSetに追記する。
+
+```
+@IBOutlet private var imageCollectionView: UICollectionView! {
+    didSet {
+        ...
+        imageCollectionView.collectionViewLayout = collectionViewLayout
+    }
+}
+```
+
+- セルの大きさが決まり、完成図のようなセルになったと思います。
 
 ### 各技術の説明
+**CollectionView/TableView**
+**Custom Cell**
+**MVVMアーキテクチャ**
+**DiffableDataSource**
 
 ### 各技術の理解
 
@@ -576,7 +650,7 @@ func setImage() {
 
 ### 手順
 **Coordinatorの作成**
-- 次にログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。
+- まずログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。
 1. `LoginCoordinator.swift`を`LoginScene`ディレクトリに作成し、以下のコードを記述する。
 
 ```
@@ -598,8 +672,7 @@ final class LoginCoordinator {
 
 - NavigationControllerとは、ViewControllerをスタックさせ表示させるためのViewControllerです。詳しくは後述。
 
-2. `showLogin(in:)`はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。  
-※内部でしか使わない関数は必ずprivate拡張の中に入れる。そうすることで、関数が内部でしか使われていないことを明示でき、可読性が上がる。
+2. `showLogin(in:)`はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。
 
 ```
 // MARK: - Private Functions
@@ -616,7 +689,7 @@ private extension LoginCoordinator {
 }
 ```
 
-3. `AppDelegate`内の処理を書き換える。`didFinishLaunchingWithOptions`の中を以下に置き換え、クラス変数に`private var loginCoordinator: LoginCoordinator?`を追加する。
+3. 立ち上がりの画面をログイン画面に戻すため、`AppDelegate`内の処理を書き換える。`didFinishLaunchingWithOptions`の中を以下に置き換え、クラス変数に`private var loginCoordinator: LoginCoordinator?`を追加する。
 
 ```
 func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -769,7 +842,7 @@ extension LoginCoordinator: LoginViewControllerDelegate {
 - こうすることで、loginButton押下時にimageList画面に遷移する事ができるようになりました。
 
 **タブバーの実装**
-- これでCoordinatorによってLogin画面からImageList画面に遷移できるようになりましたが、本アプリは複数のメイン画面から構成されるため、切り替えを簡単にするためのタブバーを実装しましょう。
+- これでCoordinatorによってLogin画面からImageList画面に遷移できるようになりましたが、本アプリは複数のメイン画面から構成されるため、切り替えを簡単にするためのタブバーを実装しましょう。それには`UITabBarController`と呼ばれるクラスを用います。
 
 1. `BaseTabScene`を作成し、`BaseTabViewController.swift`を作成、以下のコードを記述する。
 
@@ -905,4 +978,11 @@ extension AppDelegate: LoginCoordinatorDelegate {
 
 - これでMain画面がTabBarに内包されたImageListになりました。
 
+### 各技術の説明
+**Coordinator**
 
+**NavigationController**
+
+**UITabBarController**
+
+### 各技術の理解
