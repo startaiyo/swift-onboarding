@@ -637,7 +637,8 @@ final class ImageListViewController: UIViewController {
 - セルの大きさが決まり、完成図のようなセルになったと思います。
 
 ### 各技術の説明
-**CollectionView/TableView**
+
+**CollectionView/TableView**  
 - 前者は同じ構造の複数のデータを決まったレイアウトで一覧表示するのに使われ、後者は単一の列で複数のデータを表示するのに使われる。
 - データの表示単位をセル(`UICollectionViewCell/UITableViewCell`)と呼び、後述のCustom Cellにレイアウトを作成する。
   - 例えば、今回のようにimageとtitleを表示するのであれば、Cellのファイル(.swift, .xibファイル両方)で表示単位であるtitleとimageがどのように表示されるのかを定義している。
@@ -645,18 +646,22 @@ final class ImageListViewController: UIViewController {
 - sectionという区切りで各itemをグループ化できる。
 - データの表示にはDataSourceと呼ばれるものを用い、CollectionViewであれば`UICollectionViewDataSource`または`UICollectionViewDiffableDataSource`が用いられる。
 - セルをタップした時に行う処理はdelegateクラスを継承し、定義する。CollectionViewであれば`UICollectionViewDelegate`が用いられる。
-**Custom Cell**
+
+**Custom Cell**  
 - 自分でセルのレイアウトを決める時に作成する、標準の`UICollectionViewCell/UITableViewCell`を継承したクラス。
 - 多くの場合xibファイルと組み合わせて作成するが、その場合reuseIdentifierと呼ばれる、セルの作成/reuseの際に参照される一意の値を設定する必要がある。
 - また、上記Custom CellをcollectionViewでdequeueするためには、collectionViewで上記セルを`register()`する必要がある。詳しくは[こちら](https://developer.apple.com/documentation/uikit/uicollectionview/1618089-register)。
-**MVVMアーキテクチャ**
+
+**MVVMアーキテクチャ**  
 - Modelがデータを、Viewが表示を、そしてViewModelがModelの取得とそれによって生じた変化に対しViewへの反映を行うようにしたアーキテクチャ。
 - ViewとViewへのデータ表示を単一のViewContrllerで行うよりもコード量が少なくなり複雑性が下がるため、可読性が上がるというメリットがある。
 - ViewModel中でViewModelへの変化を起こすInput, ViewModelからViewに変化を及ぼすOutputに分けられる。
 - ViewModelの状態をViewに反映できるように繋げることをBindingと呼ぶ。
-**DiffableDataSource**
+
+**DiffableDataSource**  
 - セルの表示を担うDataSourceのうち、差分の更新を改良したもの。[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)に詳細を記述している。
 - 差分によって別々のセルとして扱うというその特性上、それぞれのセルがユニークでなければならず、セルのデータ表示に使われるViewModelはHashable(一意に定まる事が保証されたクラス)に基づいている必要がある。
+
 ### 各技術の理解
 
 ## 第三章 メイン画面へ移動可能にする
