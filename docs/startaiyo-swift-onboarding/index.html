@@ -431,7 +431,20 @@ private extension ImageListCell {
 }
 </code></pre>
 <ol type="1" start="4">
-<li>いよいよデータ部分とViewを結合する、ViewModelを実装する。<code>ViewModels</code>配下に、<code>ImageListCell</code>のViewModelである、<code>ImageListCellViewModel.swift</code>と<code>ImageListView</code>のViewModelである<code>ImageListViewModel.swift</code>を作成する。</li>
+<li>表示するデータを定義する、<code>ImageModel</code>を作成する。</li>
+</ol>
+<ul>
+<li>ルート階層(<code>Presentation</code>と同じ階層)に<code>Domain</code>ディレクトリを作成する。</li>
+<li>その下に<code>Models</code>ディレクトリを作成。</li>
+<li><code>ImageModel.swift</code>を作成、以下を記述する。</li>
+</ul>
+<pre><code>struct ImageModel {
+    let title: String
+    let imageURLString: String
+}
+</code></pre>
+<ol type="1" start="5">
+<li>いよいよデータ部分であるModelとViewを結合する、ViewModelを実装する。<code>ViewModels</code>配下に、<code>ImageListCell</code>のViewModelである、<code>ImageListCellViewModel.swift</code>と<code>ImageListView</code>のViewModelである<code>ImageListViewModel.swift</code>を作成する。</li>
 <li><code>ImageListCellViewModel.swift</code>に下記を記述する。</li>
 </ol>
 <pre><code>import Foundation
@@ -485,7 +498,7 @@ extension ImageListCellViewModel: ImageListCellViewModelOutput {
 <li><code>"ViewModelクラス名前"Output</code>はViewに影響を及ぼす関数・変数を、<code>"ViewModelクラス名前"Input</code>は逆にViewから影響を及ぼされ、ViewModel内への影響を及ぼす関数・変数を記述するプロトコルである。(後者は今回は出てこないが、また後ほど出てくる。)</li>
 <li><code>ViewModel</code>で定義される変数・インスタンスはInputという構造体を定義し、そこから依存性注入する。</li>
 </ul>
-<ol type="1" start="6">
+<ol type="1" start="7">
 <li><code>ImageListViewModel.swift</code>に下記コードを記述する。</li>
 </ol>
 <pre><code>protocol ImageListViewModelOutput {
@@ -506,13 +519,18 @@ final class ImageListViewModel {
 // MARK: - Private functions
 private extension ImageListViewModel {
     func fetchData() {
-        // 一旦はダミーデータで実装
-        var dummy = [ImageListCellViewModel]()
+        var dummyData = [ImageModel]()
+        // ダミーデータ作成
         for i in 0..&lt;12 {
-            dummy.append(.init(input: .init(title: &#34;title \(i)&#34;,
-                                            imageURLString: &#34;https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=bc01c83c3da0425e9baa6c7a9204af81&#34;)))
+            dummyData.append(.init(title: &#34;title \(i)&#34;,
+                                   imageURLString: &#34;https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=bc01c83c3da0425e9baa6c7a9204af81&#34;))
         }
-        data = dummy
+        data = dummyData.map { self.makeCellViewModel($0) }
+    }
+
+    func makeCellViewModel(_ model: ImageModel) -&gt; ImageListCellViewModel {
+        .init(input: .init(title: model.title,
+                           imageURLString: model.imageURLString))
     }
 }
 
@@ -523,7 +541,10 @@ extension ImageListViewModel: ImageListViewModelOutput {
     }
 }
 </code></pre>
-<ol type="1" start="7">
+<ul>
+<li>ダミーデータ作成部分は後ほど、APIをfetchする処理に書き換えます。</li>
+</ul>
+<ol type="1" start="8">
 <li>まずは<code>ImageListCellViewModel</code>と<code>ImageListCell</code>のデータを結合(binding)するため、<code>ImageListCell.swift</code>に下記コードを追加する。</li>
 </ol>
 <pre><code>final class ImageListCell: UICollectionViewCell {
@@ -555,7 +576,7 @@ private extension ImageListCell {
 <ul>
 <li>これでviewModelのOutputのデータがViewに表示され(つまり、Viewに影響を及ぼし)ました。</li>
 </ul>
-<ol type="1" start="8">
+<ol type="1" start="9">
 <li>UICollectionViewに表示するデータを扱うクラスである、<code>ImageListViewController+ImageDataSource.swift</code>を作成し、以下コードを記述する。</li>
 </ol>
 <pre><code>import UIKit
@@ -593,7 +614,7 @@ extension ImageDataSource {
 <li>DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは<a href="https://qiita.com/startaiyo/items/61cdad04b53b1a740a90" target="_blank">こちら</a></li>
 <li>ここで<code>ImageListCellViewModel</code>と<code>ImageListCell</code>が結合する。</li>
 </ul>
-<ol type="1" start="9">
+<ol type="1" start="10">
 <li><code>ImageListViewController.swift</code>で下記コードを記述し、dataSource、データの結合(binding)を設定する。</li>
 </ol>
 <pre><code>final class ImageListViewController: UIViewController {

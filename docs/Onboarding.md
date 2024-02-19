@@ -394,9 +394,22 @@ private extension ImageListCell {
     }
 }
 ```
-4. いよいよデータ部分とViewを結合する、ViewModelを実装する。`ViewModels`配下に、`ImageListCell`のViewModelである、`ImageListCellViewModel.swift`と`ImageListView`のViewModelである`ImageListViewModel.swift`を作成する。
 
-5. `ImageListCellViewModel.swift`に下記を記述する。
+4. 表示するデータを定義する、`ImageModel`を作成する。
+- ルート階層(`Presentation`と同じ階層)に`Domain`ディレクトリを作成する。
+- その下に`Models`ディレクトリを作成。
+- `ImageModel.swift`を作成、以下を記述する。
+
+```
+struct ImageModel {
+    let title: String
+    let imageURLString: String
+}
+```
+
+5. いよいよデータ部分であるModelとViewを結合する、ViewModelを実装する。`ViewModels`配下に、`ImageListCell`のViewModelである、`ImageListCellViewModel.swift`と`ImageListView`のViewModelである`ImageListViewModel.swift`を作成する。
+
+6. `ImageListCellViewModel.swift`に下記を記述する。
 
 ```
 import Foundation
@@ -449,7 +462,7 @@ extension ImageListCellViewModel: ImageListCellViewModelOutput {
 - `"ViewModelクラス名前"Output`はViewに影響を及ぼす関数・変数を、`"ViewModelクラス名前"Input`は逆にViewから影響を及ぼされ、ViewModel内への影響を及ぼす関数・変数を記述するプロトコルである。(後者は今回は出てこないが、また後ほど出てくる。)
 - `ViewModel`で定義される変数・インスタンスはInputという構造体を定義し、そこから依存性注入する。
 
-6. `ImageListViewModel.swift`に下記コードを記述する。
+7. `ImageListViewModel.swift`に下記コードを記述する。
 
 ```
 protocol ImageListViewModelOutput {
@@ -470,13 +483,18 @@ final class ImageListViewModel {
 // MARK: - Private functions
 private extension ImageListViewModel {
     func fetchData() {
-        // 一旦はダミーデータで実装
-        var dummy = [ImageListCellViewModel]()
+        var dummyData = [ImageModel]()
+        // ダミーデータ作成
         for i in 0..<12 {
-            dummy.append(.init(input: .init(title: "title \(i)",
-                                            imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81")))
+            dummyData.append(.init(title: "title \(i)",
+                                   imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81"))
         }
-        data = dummy
+        data = dummyData.map { self.makeCellViewModel($0) }
+    }
+
+    func makeCellViewModel(_ model: ImageModel) -> ImageListCellViewModel {
+        .init(input: .init(title: model.title,
+                           imageURLString: model.imageURLString))
     }
 }
 
@@ -487,8 +505,9 @@ extension ImageListViewModel: ImageListViewModelOutput {
     }
 }
 ```
+- ダミーデータ作成部分は後ほど、APIをfetchする処理に書き換えます。
 
-7. まずは`ImageListCellViewModel`と`ImageListCell`のデータを結合(binding)するため、`ImageListCell.swift`に下記コードを追加する。
+8. まずは`ImageListCellViewModel`と`ImageListCell`のデータを結合(binding)するため、`ImageListCell.swift`に下記コードを追加する。
 
 ```
 final class ImageListCell: UICollectionViewCell {
@@ -520,7 +539,7 @@ private extension ImageListCell {
 
 - これでviewModelのOutputのデータがViewに表示され(つまり、Viewに影響を及ぼし)ました。
 
-8. UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
+9. UICollectionViewに表示するデータを扱うクラスである、`ImageListViewController+ImageDataSource.swift`を作成し、以下コードを記述する。
 
 ```
 import UIKit
@@ -559,7 +578,7 @@ extension ImageDataSource {
 - ここで`ImageListCellViewModel`と`ImageListCell`が結合する。
 
 
-9. `ImageListViewController.swift`で下記コードを記述し、dataSource、データの結合(binding)を設定する。
+10. `ImageListViewController.swift`で下記コードを記述し、dataSource、データの結合(binding)を設定する。
 
 ```
 final class ImageListViewController: UIViewController {
