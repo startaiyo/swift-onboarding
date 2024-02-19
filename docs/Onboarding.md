@@ -664,12 +664,16 @@ final class ImageListViewController: UIViewController {
 
 ### 各技術の理解
 
+**TableView**  
+- 二つのdataSourceへの理解
+
 ## 第三章 メイン画面へ移動可能にする
 ### 概要
 ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
 ### 本章で学ぶこと
-- [Coordinator](https://medium.com/p/3960ad9a6d85)
+- [Coordinator](https://khanlou.com/2015/10/coordinators-redux/?ref=blog.personal-factory.com)
 - [NavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)
+- [UITabBarController](https://developer.apple.com/documentation/uikit/uitabbarcontroller)
 ### 完成イメージ
 
 ### 手順
@@ -1003,10 +1007,20 @@ extension AppDelegate: LoginCoordinatorDelegate {
 - これでMain画面がTabBarに内包されたImageListになりました。
 
 ### 各技術の説明
-**Coordinator**
 
-**NavigationController**
+**Coordinator**
+- 今までViewControllerがViewへの表示の他、画面遷移も担っていたが、ViewController同士が密結合してしまう。ViewController間の遷移を別で定義することで、疎結合にする事が目的。
+- 遷移だけでなく、ViewControllerの生成、親ViewControllerの指定も担う。
+- 異なるCoordinator同士が後述のNavigationControllerを繋げていくことにより、画面の遷移を実現している。
+
+**NavigationController(UINavigationController)**  
+- 複数の子ViewControllerを内包し、そこに新しいViewControllerをpushしたり、既存のViewControllerをpopすることによって画面遷移を実現するViewController。ViewControllersとNavigationBarが含まれている。
+- 二つ以上のViewControllerを持っている場合、画面の遷移に伴って自動でbackボタンが付与される。backボタンを押すと現在映っている画面がpopされる。
 
 **UITabBarController**
+- UINavigationController同様、複数のViewControllerを持っているが、こちらはタブを選択することにより表示するViewControllerを変える事ができる。
+- TabBarItemを設定すると、各タブに表示されるtitle、imageなどを設定する事ができる。
 
 ### 各技術の理解
+**NavigationController**
+popとpush後のViewControllers

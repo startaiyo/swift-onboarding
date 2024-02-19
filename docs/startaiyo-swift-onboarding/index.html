@@ -703,6 +703,10 @@ private extension ImageListViewController {
 <li>差分によって別々のセルとして扱うというその特性上、それぞれのセルがユニークでなければならず、セルのデータ表示に使われるViewModelはHashable(一意に定まる事が保証されたクラス)に基づいている必要がある。</li>
 </ul>
 <h2 is-upgraded>各技術の理解</h2>
+<p><strong>TableView</strong></p>
+<ul>
+<li>二つのdataSourceへの理解</li>
+</ul>
 
 
       </google-codelab-step>
@@ -712,8 +716,9 @@ private extension ImageListViewController {
 <p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
 <ul>
-<li><a href="https://medium.com/p/3960ad9a6d85" target="_blank">Coordinator</a></li>
+<li><a href="https://khanlou.com/2015/10/coordinators-redux/?ref=blog.personal-factory.com" target="_blank">Coordinator</a></li>
 <li><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank">NavigationController</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uitabbarcontroller" target="_blank">UITabBarController</a></li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
 <h2 is-upgraded>手順</h2>
@@ -1054,9 +1059,23 @@ extension AppDelegate: LoginCoordinatorDelegate {
 </ul>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>Coordinator</strong></p>
-<p><strong>NavigationController</strong></p>
+<ul>
+<li>今までViewControllerがViewへの表示の他、画面遷移も担っていたが、ViewController同士が密結合してしまう。ViewController間の遷移を別で定義することで、疎結合にする事が目的。</li>
+<li>遷移だけでなく、ViewControllerの生成、親ViewControllerの指定も担う。</li>
+<li>異なるCoordinator同士が後述のNavigationControllerを繋げていくことにより、画面の遷移を実現している。</li>
+</ul>
+<p><strong>NavigationController(UINavigationController)</strong></p>
+<ul>
+<li>複数の子ViewControllerを内包し、そこに新しいViewControllerをpushしたり、既存のViewControllerをpopすることによって画面遷移を実現するViewController。ViewControllersとNavigationBarが含まれている。</li>
+<li>二つ以上のViewControllerを持っている場合、画面の遷移に伴って自動でbackボタンが付与される。backボタンを押すと現在映っている画面がpopされる。</li>
+</ul>
 <p><strong>UITabBarController</strong></p>
+<ul>
+<li>UINavigationController同様、複数のViewControllerを持っているが、こちらはタブを選択することにより表示するViewControllerを変える事ができる。</li>
+<li>TabBarItemを設定すると、各タブに表示されるtitle、imageなどを設定する事ができる。</li>
+</ul>
 <h2 is-upgraded>各技術の理解</h2>
+<p><strong>NavigationController</strong> popとpush後のViewControllers</p>
 
 
       </google-codelab-step>
