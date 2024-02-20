@@ -1043,3 +1043,23 @@ extension AppDelegate: LoginCoordinatorDelegate {
 ### 各技術の理解
 **NavigationController**
 popとpush後のViewControllers
+
+## 第四章 APIを叩いてデータを取得する
+### 概要
+ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
+### 本章で学ぶこと
+- Swift Package Manager
+### 完成イメージ
+
+### 手順
+**APIにリクエストを送るためのライブラリ追加**
+- まず、HTTP通信時に型をつける便利ツールであるswift-http-typesを追加する。
+1. 下図のように、アプリ名 > PROJECTのアプリ名 > `Package Dependencies` > +ボタンを押す。
+
+<img src ="images/image_4_1.png" width = "300">
+
+2. 右上の検索窓で`https://github.com/apple/swift-http-types.git`を検索し、右下の`Add Packages`をクリックする。
+
+<img src ="images/image_4_2.png" width = "300">
+
+3. 選択画面が出てくるので、`HTTPTypes`、`HTTPFoundation`を選択し、`Add Package`を押すと、ライブラリが追加される。

@@ -1101,6 +1101,34 @@ extension AppDelegate: LoginCoordinatorDelegate {
 
       </google-codelab-step>
     
+      <google-codelab-step label="第四章 APIを叩いてデータを取得する" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>Swift Package Manager</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<h2 is-upgraded>手順</h2>
+<p><strong>APIにリクエストを送るためのライブラリ追加</strong></p>
+<ul>
+<li>まず、HTTP通信時に型をつける便利ツールであるswift-http-typesを追加する。</li>
+</ul>
+<ol type="1">
+<li>下図のように、アプリ名 &gt; PROJECTのアプリ名 &gt; <code>Package Dependencies</code> &gt; +ボタンを押す。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/73ceb6bd8259b8f6.png"></p>
+<ol type="1" start="2">
+<li>右上の検索窓で<code>https://github.com/apple/swift-http-types.git</code>を検索し、右下の<code>Add Packages</code>をクリックする。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/d3fd1ad3ae975cda.png"></p>
+<ol type="1" start="3">
+<li>選択画面が出てくるので、<code>HTTPTypes</code>、<code>HTTPFoundation</code>を選択し、<code>Add Package</code>を押すと、ライブラリが追加される。</li>
+</ol>
+
+
+      </google-codelab-step>
+    
   </google-codelab>
 
   <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
