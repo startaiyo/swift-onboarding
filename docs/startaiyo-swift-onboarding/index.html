@@ -450,7 +450,6 @@ private extension ImageListCell {
 <pre><code>import Foundation
 
 protocol ImageListCellViewModelOutput {
-    var imageData: Data { get async throws }
     var title: String { get }
     var imageURLString: String { get }
 }
@@ -475,16 +474,6 @@ final class ImageListCellViewModel: Hashable {
 
 // MARK: - ImageListCellViewModelOutput
 extension ImageListCellViewModel: ImageListCellViewModelOutput {
-    var imageData: Data {
-        get async throws {
-        guard let url = URL(string: input.imageURLString) else {
-            throw NSError()
-        }
-        let (data, _) = try await URLSession.shared.data(for: .init(url: url))
-        return data
-    }
-    }
-
     var title: String {
         return input.title
     }
@@ -567,7 +556,7 @@ private extension ImageListCell {
 
     func setImage() {
         Task {
-            imageView.image = UIImage(data: try await viewModel.imageData)
+            imageView.image = UIImage(data: try Data(contentsOf: URL(string: viewModel.imageURLString)!))
         }
     }
 }
@@ -659,7 +648,7 @@ private extension ImageListViewController {
         let margin: CGFloat = 15
         let spacing: CGFloat = 10
         let itemHeight: CGFloat = 125
-        let screenWidth = view.frame.size.width
+        let screenWidth = UIScreen.main.bounds.width
         let itemsPerRow: CGFloat = 3
         let totalMargin = margin * 2
         let totalSpacing = spacing * (itemsPerRow - 1)
@@ -691,6 +680,7 @@ private extension ImageListViewController {
 </code></pre>
 <ul>
 <li>セルの大きさが決まり、完成図のようなセルになったと思います。</li>
+<li>紫色のワーニングがたくさん出てくるかと思われますが、一旦は放置しましょう。後ほど修正します。</li>
 </ul>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>CollectionView/TableView</strong></p>
@@ -1109,6 +1099,7 @@ extension AppDelegate: LoginCoordinatorDelegate {
 <li>Swift Package Manager</li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/26bda664c338a014.png"></p>
 <h2 is-upgraded>手順</h2>
 <p><strong>APIにリクエストを送るためのライブラリ追加</strong></p>
 <ul>
@@ -1124,7 +1115,9 @@ extension AppDelegate: LoginCoordinatorDelegate {
 <p class="image-container"><img style="width: 300.00px" src="img/d3fd1ad3ae975cda.png"></p>
 <ol type="1" start="3">
 <li>選択画面が出てくるので、<code>HTTPTypes</code>、<code>HTTPFoundation</code>を選択し、<code>Add Package</code>を押すと、ライブラリが追加される。</li>
+<li>TARGETS &gt; アプリ名 &gt; Frameworks, Libraries, and Embedded Content への、先ほどの二つ追加も忘れずに行う。</li>
 </ol>
+<p class="image-container"><img style="width: 300.00px" src="img/8afb95ad8c9d712a.png"></p>
 
 
       </google-codelab-step>

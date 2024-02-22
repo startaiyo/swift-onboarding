@@ -415,7 +415,6 @@ struct ImageModel {
 import Foundation
 
 protocol ImageListCellViewModelOutput {
-    var imageData: Data { get async throws }
     var title: String { get }
     var imageURLString: String { get }
 }
@@ -440,16 +439,6 @@ final class ImageListCellViewModel: Hashable {
 
 // MARK: - ImageListCellViewModelOutput
 extension ImageListCellViewModel: ImageListCellViewModelOutput {
-    var imageData: Data {
-        get async throws {
-        guard let url = URL(string: input.imageURLString) else {
-            throw NSError()
-        }
-        let (data, _) = try await URLSession.shared.data(for: .init(url: url))
-        return data
-    }
-    }
-
     var title: String {
         return input.title
     }
@@ -530,7 +519,7 @@ private extension ImageListCell {
 
     func setImage() {
         Task {
-            imageView.image = UIImage(data: try await viewModel.imageData)
+            imageView.image = UIImage(data: try Data(contentsOf: URL(string: viewModel.imageURLString)!))
         }
     }
 }
@@ -621,7 +610,7 @@ final class ImageListViewController: UIViewController {
         let margin: CGFloat = 15
         let spacing: CGFloat = 10
         let itemHeight: CGFloat = 125
-        let screenWidth = view.frame.size.width
+        let screenWidth = UIScreen.main.bounds.width
         let itemsPerRow: CGFloat = 3
         let totalMargin = margin * 2
         let totalSpacing = spacing * (itemsPerRow - 1)
@@ -654,6 +643,7 @@ final class ImageListViewController: UIViewController {
 ```
 
 - セルの大きさが決まり、完成図のようなセルになったと思います。
+- 紫色のワーニングがたくさん出てくるかと思われますが、一旦は放置しましょう。後ほど修正します。
 
 ### 各技術の説明
 
@@ -1047,19 +1037,27 @@ popとpush後のViewControllers
 ## 第四章 APIを叩いてデータを取得する
 ### 概要
 ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
+
 ### 本章で学ぶこと
 - Swift Package Manager
+
 ### 完成イメージ
+<img src ="images/image_4_1.png" width = "300">
 
 ### 手順
-**APIにリクエストを送るためのライブラリ追加**
+**APIにリクエストを送るためのライブラリ追加**  
+
 - まず、HTTP通信時に型をつける便利ツールであるswift-http-typesを追加する。
 1. 下図のように、アプリ名 > PROJECTのアプリ名 > `Package Dependencies` > +ボタンを押す。
 
-<img src ="images/image_4_1.png" width = "300">
+<img src ="images/image_4_2.png" width = "300">
 
 2. 右上の検索窓で`https://github.com/apple/swift-http-types.git`を検索し、右下の`Add Packages`をクリックする。
 
-<img src ="images/image_4_2.png" width = "300">
+<img src ="images/image_4_3.png" width = "300">
 
 3. 選択画面が出てくるので、`HTTPTypes`、`HTTPFoundation`を選択し、`Add Package`を押すと、ライブラリが追加される。
+
+4. TARGETS > アプリ名 > Frameworks, Libraries, and Embedded Content への、先ほどの二つ追加も忘れずに行う。
+
+<img src ="images/image_4_4.png" width = "300">
