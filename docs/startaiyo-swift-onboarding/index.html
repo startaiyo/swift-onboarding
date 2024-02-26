@@ -1095,13 +1095,381 @@ extension AppDelegate: LoginCoordinatorDelegate {
         <h2 is-upgraded>概要</h2>
 <p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
-<ul>
-<li>Swift Package Manager</li>
-</ul>
 <h2 is-upgraded>完成イメージ</h2>
 <p class="image-container"><img style="width: 300.00px" src="img/26bda664c338a014.png"></p>
 <h2 is-upgraded>手順</h2>
-<p><strong>APIにリクエストを送るためのライブラリ追加</strong></p>
+<p><strong>UnsplashAPIを叩いてみる</strong></p>
+<ul>
+<li>2024/02現在、こちらのAPIは無料で使える画像検索サービスとなっております。以下の手順により登録、使用してください。</li>
+</ul>
+<ol type="1">
+<li><a href="https://www.webcreatorbox.com/tech/react-unsplash-api#toc-unsplash-1" target="_blank">こちらの記事</a>の<code>1. Unsplash APIの開発者登録</code>の手順に従い、AccessKeyとSecretKeyを取得する。</li>
+<li>curlまたはブラウザ等で、http://api.unsplash.com/search/photos?client_id=&lt;ご自身のaccess_key&gt;&amp;query=meat を叩く。</li>
+</ol>
+<p>すると、レスポンスは大まかに次のような形になっている。</p>
+<pre><code>{
+    &#34;total&#34;: xxxx,
+    ...
+    &#34;results&#34; : [
+        {
+            &#34;id&#34;: &#34;xxxxxx&#34;,
+            ...
+            &#34;alt_description&#34;: &#34;xxxxxxxx&#34;,
+            ...
+            &#34;urls&#34;: {
+                &#34;raw&#34;: &#34;https://xxxxx&#34;,
+                ...
+                &#34;thumb&#34;: &#34;https://xxxxx&#34;,
+                ...
+            }
+            ...
+        },
+    ]
+}
+</code></pre>
+<p><strong>ApiClientを作成する</strong></p>
+<ul>
+<li>APIを叩くための土台を提供するモデルであるApiClientを作成します。</li>
+<li>内容はAPIを叩くのに共通しているパラメータ、共通の処理をまとめたprotocolである。</li>
+</ul>
+<ol type="1">
+<li><code>Presentation</code>と同じ階層に<code>Infrastructure</code>ディレクトリ、その下に<code>Network</code>ディレクトリを作成し、<code>Network</code>に<code>CommonRequest.swift</code>、<code>ApiClient.swift</code>、<code>ApiClientProtocol.swift</code>を作成する。</li>
+<li><code>CommonRequest.swift</code>に以下コードを記述し、APIを叩く際に共通で使うパラメータを用意する。</li>
+</ol>
+<pre><code>protocol CommonRequest {
+    var baseUrlString: String { get }
+    var path: String { get }
+    var method: String { get }
+    var headerFields: [String: String] { get }
+    var parameters: [String: String] { get }
+}
+
+extension CommonRequest {
+    var baseUrlString: String { &#34;https://api.unsplash.com&#34; }
+    var path: String { &#34;/search/photos&#34; }
+    var headerFields: [String: String] { [:] }
+    var parameters: [String: String]? { [:] }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>ApiClientProtocol.swift</code>に以下コードを記載し、ApiClientで共通するメソッドのインタフェースを記述する。</li>
+</ol>
+<pre><code>import Foundation
+
+protocol ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, Error&gt;) -&gt; Void)
+}
+</code></pre>
+<ol type="1" start="4">
+<li><code>ApiClient.swift</code>に以下コードを記載し、ApiClientで共通するメソッドの具体を記述する。</li>
+</ol>
+<pre><code>struct ApiClient { }
+
+extension ApiClient: ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, Error&gt;) -&gt; Void) {
+        let request = createRequest(request)
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error {
+                completionHandler(.failure(error))
+                return
+            }
+
+            guard let data,
+                  let response = response as? HTTPURLResponse else {
+                completionHandler(.failure(NSError(domain: &#34;&#34;,
+                                                   code: 500)))
+                return
+            }
+
+            if response.statusCode == 200 {
+                completionHandler(.success(data))
+            } else {
+                completionHandler(.failure(NSError(domain: &#34;&#34;,
+                                                   code: response.statusCode)))
+            }
+
+        }
+        task.resume()
+    }
+}
+
+private extension ApiClient {
+    func createRequest(_ r: CommonRequest) -&gt; URLRequest {
+        let queryStrings = r.parameters.map { &#34;\($0.key)=\($0.value)&#34; }.joined(separator: &#34;&amp;&#34;)
+        let searchURL = URL(string: r.baseUrlString + r.path + &#34;?&#34; + queryStrings)!
+        var request = URLRequest(url: searchURL)
+        request.httpMethod = r.method
+        r.headerFields.forEach {
+            request.addValue($0.value,
+                             forHTTPHeaderField: $0.key)
+        }
+        return request
+    }
+}
+</code></pre>
+<ul>
+<li>Swiftはプロトコル指向の言語と言われており、実装と使用部分を区別する。そのため、あえて空の構造体にextensionを持たせるといった回りくどい書き方をしている。</li>
+</ul>
+<p><strong>デコードのためのmodelを用意する</strong></p>
+<ul>
+<li>次に、デコードやデコード後のデータ伝送のためのモデルである<code>DTO(Data Transfer Object)</code>を作成していきます。</li>
+</ul>
+<ol type="1">
+<li><code>Domain</code>中の<code>Models/Image</code>にデコードやデコード後のデータ伝送のためのモデルを格納する、<code>DTOs</code>ディレクトリを作成する。</li>
+<li>このディレクトリに上記resultsを受け取るmodelである<code>ServerResponseDTOForImage.swift</code>を作成する。</li>
+</ol>
+<pre><code>struct ServerResponseDTOForImage: Codable {
+    let results: [ImageInfoDTO]
+}
+</code></pre>
+<ol type="1" start="3">
+<li>同様に<code>ImageInfoDTO.swift</code>を作成し、resultsの中身をdecodeする下記コードを記述する。</li>
+</ol>
+<pre><code>struct ImageInfoDTO: Codable {
+    let id: String
+    let title: String
+    let urls: ImageURLInfoDTO
+}
+
+extension ImageInfoDTO {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title = &#34;alt_description&#34;
+        case urls
+    }
+}
+</code></pre>
+<ul>
+<li>CodingKeysは、DTOモデル上で使うプロパティ名とAPIから受け取ったjson上でのキー(CodingKey)名が異なる際、このキーはこのプロパティに対応している、といったことを示す事ができるenumである。</li>
+<li>swiftでは、一階層以上のネストのものを一つのモデルでデコードする事ができない。そのため、urlsのデコード専用の<code>ImageURLInfoDTO</code>を新たに作成する必要がある。</li>
+</ul>
+<ol type="1" start="4">
+<li>最後に、<code>ImageURLInfoDTO.swift</code>を作成し、下記コードを記述する。</li>
+</ol>
+<pre><code>struct ImageURLInfoDTO: Codable {
+    let raw: String
+    let thumb: String
+}
+</code></pre>
+<ol type="1" start="5">
+<li><code>ImageInfoDTO.swift</code>に戻り、<code>ImageModel</code>に変換するための関数、<code>toModel()</code>を作成する。</li>
+</ol>
+<pre><code>extension ImageInfoDTO {
+    func toModel() -&gt; ImageModel {
+        return .init(title: title,
+                     imageURLString: urls.raw)
+    }
+}
+</code></pre>
+<p><strong>UnsplashAPIを叩きデータを取得するためのクラス作成</strong></p>
+<ul>
+<li>何かしらデータを操作するクラスをxxxxServiceと呼ぶ。リポジトリ層のようなもの。</li>
+</ul>
+<ol type="1">
+<li>下記のようなフォルダ構成を作成する。</li>
+</ol>
+<pre><code>Domain
+├ Services
+|   ├ App
+|   |  ├ Implementation
+|   |  └ Interface
+|   └ Network
+|      ├ Implementation
+|      └ Interface
+└ Models
+</code></pre>
+<ul>
+<li>ここで、Networkはモデルを扱う操作のうち、通信を伴うもの、Appは通信を伴うものとlocalのもの全体をまとめたものになります。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>Network/Interface</code>に<code>ImageNetworkService.swift</code>を作成、以下を記述。</li>
+</ol>
+<pre><code>protocol ImageNetworkService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], Error&gt;) -&gt; Void) 
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>Network/Implementation</code>に<code>Image</code>ディレクトリを作成、<code>DefaultImageNetworkService.swift</code>、<code>ImageRequest.swift</code>を作成し、それぞれ以下を記述する。</li>
+</ol>
+<pre><code>// DefaultImageNetworkService.swift
+
+import Foundation
+
+final class DefaultImageNetworkService {
+    let apiClient = ApiClient()
+}
+
+// MARK: - RestaurantNetworkService
+extension DefaultImageNetworkService: ImageNetworkService {
+    // MARK: Images
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], Error&gt;) -&gt; Void) {
+        apiClient.call(request: ImageRequest(input: input)) { result in
+            switch result {
+                case .success(let data):
+                    do {
+                        let decodedData = try JSONDecoder().decode(ServerResponseDTOForImage.self,
+                                                                   from: data)
+                        completionHandler(.success(decodedData.results))
+                    } catch {
+                        completionHandler(.failure(error))
+                    }
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code>// ImageRequest.swift
+
+struct ImageRequest: CommonRequest {
+    var headerFields: [String : String]
+    let method: String = &#34;GET&#34;
+    let parameters: [String: String]
+
+    init(input: ImageInput) {
+        let encodedSearchQuery = input.searchQuery.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        var params: [ImageKeys: String] = [:]
+        params[.client_id] = &lt;ご自身のUnsplash Apiのaccess_key&gt;
+        params[.query] = encodedSearchQuery
+        var headers: [String: String] = [:]
+        headers[&#34;contentType&#34;] = &#34;application/json&#34;
+
+        var rawKeyParams: [String: String] = [:]
+        params.forEach { rawKeyParams[$0.key.rawValue] = $0.value }
+        parameters = rawKeyParams
+        headerFields = headers
+    }
+}
+
+struct ImageInput {
+    let searchQuery: String
+}
+</code></pre>
+<ol type="1" start="4">
+<li>同様に<code>App/Implementation</code>配下に<code>DefaultImageAppService.swift</code>, <code>App/Interface</code>配下に<code>ImageAppService.swift</code>を作成、以下を記述。</li>
+</ol>
+<pre><code>// DefaultImageAppService.swift
+
+final class DefaultImageAppService { 
+    // MARK: Private properties
+    private let networkService: ImageNetworkService
+
+    init(networkService: ImageNetworkService = DefaultImageNetworkService()) {
+        self.networkService = networkService
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        networkService.getImages(input) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code>// ImageAppService.swift
+
+protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
+}
+
+</code></pre>
+<p><strong>AppServiceを使い、実際にデータを表示</strong></p>
+<ol type="1">
+<li><code>ImageListViewModel.swift</code>に以下を追記。</li>
+</ol>
+<pre><code>protocol ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void)
+}
+...
+typealias ImageListViewModelProtocol = ImageListViewModelOutput &amp; ImageListViewModelInput // &lt;-- 追加
+
+extension ImageListViewModel {
+    struct Input {
+        let imageAppService: ImageAppService
+    }
+}
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private let input: Input
+    ...
+
+    init(input: Input) {
+        self.input = input
+        // fetchData()は削除
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    // fetchData()は削除
+
+    func makeCellViewModel(_ model: ImageModel) -&gt; ImageListCellViewModel {
+        .init(input: .init(title: model.title,
+                           imageURLString: model.imageURLString))
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
+    }
+}
+
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(images.map { self.makeCellViewModel($0) })
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>ImageListViewController.swift</code>のsetupBindingsを下記に書き換える</li>
+</ol>
+<pre><code>func setupBindings() {
+    viewModel.applyData { [weak self] imageRows in
+        DispatchQueue.main.async {
+            self?.dataSource.apply(imageRows)
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>これで、実際のデータが表示されるようになりました。</li>
+</ul>
+<h2 is-upgraded>各技術の説明</h2>
+<h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第五章 データを保存する。" duration="0">
+        <p><strong>localに保存するためのライブラリ、RealmSwift追加</strong></p>
 <ul>
 <li>まず、HTTP通信時に型をつける便利ツールであるswift-http-typesを追加する。</li>
 </ul>
@@ -1110,11 +1478,11 @@ extension AppDelegate: LoginCoordinatorDelegate {
 </ol>
 <p class="image-container"><img style="width: 300.00px" src="img/73ceb6bd8259b8f6.png"></p>
 <ol type="1" start="2">
-<li>右上の検索窓で<code>https://github.com/apple/swift-http-types.git</code>を検索し、右下の<code>Add Packages</code>をクリックする。</li>
+<li>右上の検索窓で<code>https://github.com/realm/realm-swift.git</code>を検索し、右下の<code>Add Packages</code>をクリックする。</li>
 </ol>
 <p class="image-container"><img style="width: 300.00px" src="img/d3fd1ad3ae975cda.png"></p>
 <ol type="1" start="3">
-<li>選択画面が出てくるので、<code>HTTPTypes</code>、<code>HTTPFoundation</code>を選択し、<code>Add Package</code>を押すと、ライブラリが追加される。</li>
+<li>選択画面が出てくるので、<code>Realm</code>、<code>RealmSwift</code>を選択し、<code>Add Package</code>を押すと、ライブラリが追加される。</li>
 <li>TARGETS &gt; アプリ名 &gt; Frameworks, Libraries, and Embedded Content への、先ほどの二つ追加も忘れずに行う。</li>
 </ol>
 <p class="image-container"><img style="width: 300.00px" src="img/8afb95ad8c9d712a.png"></p>
