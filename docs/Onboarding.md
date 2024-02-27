@@ -1424,6 +1424,12 @@ func setupBindings() {
 
 ### 各技術の説明
 
+**Protocol志向**
+
+**URLSession**
+
+**Services**
+
 ### 各技術の理解
 
 ## 第五章 データを保存する。
