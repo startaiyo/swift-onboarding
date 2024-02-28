@@ -1464,8 +1464,19 @@ extension ImageListViewModel: ImageListViewModelInput {
 </ul>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>Protocol志向</strong></p>
+<ul>
+<li>クラスだとメソッドのオーバーライドやクラス内での共有など、オブジェクト指向特有の問題があったため、それを克服するためにprotocolを使ってプログラミングをしようとしたもの。</li>
+</ul>
 <p><strong>URLSession</strong></p>
+<ul>
+<li>Foundationにもともと組み込まれている、ネットワーク通信のためのクラス。</li>
+<li>Swift公式のライブラリであるため、他製ライブラリを使う場合に比べてコードのメンテがずっと続く利点があるが、コードが複雑になりやすいデメリットがある。</li>
+</ul>
 <p><strong>Services</strong></p>
+<ul>
+<li>ネットワークを用いた通信、またはローカルストレージへの通信を伴う、データの操作を担う処理群の総称。</li>
+<li>データは多くはDTO modelを介して操作される。</li>
+</ul>
 <h2 is-upgraded>各技術の理解</h2>
 
 
