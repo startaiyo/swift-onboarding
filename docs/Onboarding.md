@@ -401,11 +401,16 @@ private extension ImageListCell {
 - `ImageModel.swift`を作成、以下を記述する。
 
 ```
+typealias ImageID = String
+
 struct ImageModel {
+    let id: ImageID
     let title: String
     let imageURLString: String
 }
 ```
+
+- typealiasとは既存のクラスの組み合わせで新しいクラスを作成する際に用いられる。
 
 5. いよいよデータ部分であるModelとViewを結合する、ViewModelを実装する。`ViewModels`配下に、`ImageListCell`のViewModelである、`ImageListCellViewModel.swift`と`ImageListView`のViewModelである`ImageListViewModel.swift`を作成する。
 
@@ -564,6 +569,7 @@ extension ImageDataSource {
 ```
 
 - DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)
+- DispatchQueueとは、並列処理を行うキューを提供するクラス。
 - ここで`ImageListCellViewModel`と`ImageListCell`が結合する。
 
 
@@ -670,6 +676,11 @@ final class ImageListViewController: UIViewController {
 **DiffableDataSource**  
 - セルの表示を担うDataSourceのうち、差分の更新を改良したもの。[こちら](https://qiita.com/startaiyo/items/61cdad04b53b1a740a90)に詳細を記述している。
 - 差分によって別々のセルとして扱うというその特性上、それぞれのセルがユニークでなければならず、セルのデータ表示に使われるViewModelはHashable(一意に定まる事が保証されたクラス)に基づいている必要がある。
+
+**DispatchQueue**
+- 通常、iOSでは一つのメインスレッドと複数のサブスレッドで処理が実行される。
+- メインスレッドでは基本的にはUIに関する処理、サブスレッドではそれ以外の処理が非同期に実行される。
+- DispatchQueueは処理をどのスレッドで行うのかを指定できる。時間のかかる処理を非同期で行うのに頻繁に用いられる。
 
 ### 各技術の理解
 
@@ -1039,6 +1050,9 @@ popとpush後のViewControllers
 ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。
 
 ### 本章で学ぶこと
+- [Protocol志向](https://www.wwdcnotes.com/notes/wwdc15/408/)
+- [URLSession](https://developer.apple.com/documentation/foundation/urlsession)
+- [Services](https://medium.com/livefront/creating-a-service-layer-in-swift-ea771088fb66)
 
 ### 完成イメージ
 <img src ="images/image_4_1.png" width = "300">
@@ -1208,7 +1222,8 @@ struct ImageURLInfoDTO: Codable {
 ```
 extension ImageInfoDTO {
     func toModel() -> ImageModel {
-        return .init(title: title,
+        return .init(id: id,
+                     title: title,
                      imageURLString: urls.raw)
     }
 }
@@ -1443,19 +1458,264 @@ func setupBindings() {
 <!-- Protocol指向について -->
 
 ## 第五章 データを保存する。
+
+### 概要
+インターネットに繋がっていなくてもデータを取得できるようにlocal storageに保存したり、複数ユーザーでデータが共有できるようにネット上にデータを保存するための実装をしていきます。
+
+### 本章で学ぶこと
+- RealmSwift
+- Firebase(FireStore)
+
+### 完成イメージ
+
+### 手順
+
+<!-- <img src ="images/image_5_1.png" width = "300"> -->
+
 **localに保存するためのライブラリ、RealmSwift追加**  
 
-- まず、HTTP通信時に型をつける便利ツールであるswift-http-typesを追加する。
+- まず、下記の手順でlocalに保存するために頻繁に使われるライブラリであるRealmをimportする。
+
 1. 下図のように、アプリ名 > PROJECTのアプリ名 > `Package Dependencies` > +ボタンを押す。
 
-<img src ="images/image_4_2.png" width = "300">
+<img src ="images/image_5_2.png" width = "300">
 
 2. 右上の検索窓で`https://github.com/realm/realm-swift.git`を検索し、右下の`Add Packages`をクリックする。
 
-<img src ="images/image_4_3.png" width = "300">
+<img src ="images/image_5_3.png" width = "300">
 
 3. 選択画面が出てくるので、`Realm`、`RealmSwift`を選択し、`Add Package`を押すと、ライブラリが追加される。
 
 4. TARGETS > アプリ名 > Frameworks, Libraries, and Embedded Content への、先ほどの二つ追加も忘れずに行う。
 
-<img src ="images/image_4_4.png" width = "300">
+<img src ="images/image_5_4.png" width = "300">
+
+**localに保存するためのモデルを作る**
+
+- Realmでは、`Object`というクラスを継承したモデルを用います。
+1. `Models`の`Image`ディレクトリで`ImageObject.swift`を作成し、下記コードを記述する。
+
+```
+import RealmSwift
+
+class ImageObject: Object {
+    @Persisted(primaryKey: true) var id: String
+    @Persisted var title: String
+    @Persisted var imageURLString: String
+}
+
+extension ImageObject {
+    convenience init(id: String,
+                     title: String,
+                     imageURLString: String) {
+        self.init()
+        self.id = id
+        self.title = title
+        self.imageURLString = imageURLString
+    }
+}
+```
+
+- Objectは各プロパティの値を入れてインスタンス化するのに、独自のinitメソッドを定義する必要があります。convenienceは他のイニシャライザの存在のもと、追加でイニシャライザを定義したい時に使われる修飾子。
+- `@Persisted`で囲われた値がローカルに永続保存されるデータとなる。
+
+2. `Infrastructure/Storage`ディレクトリにRealmインスタンス初期化のためのクラスを記述するため、`RealmStorage.swift`を作る。
+- 通常、realmのインスタンス化は`try! Realm()`により行うことができるが、このコードだとスキーマの変更をした際にデータ不整合でアプリがクラッシュしてしまう。スキーマを更新してもクラッシュすることを防ぐよう、下記のコードでマイグレーションを行えるようにする。
+
+```
+import RealmSwift
+
+struct RealmConstants {
+    static let lastDBVersion: UInt64 = 1
+}
+
+final class RealmStorage {
+    // MARK: Properties
+    private var realm: Realm {
+        guard let realm = try? Realm(configuration: RealmStorage.config()) else {
+            fatalError("Could not create Realm")
+        }
+        realm.refresh()
+        return realm
+    }
+}
+
+extension RealmStorage {
+    static func config() -> Realm.Configuration {
+        var config = Realm.Configuration()
+        config.schemaVersion = RealmConstants.lastDBVersion
+        config.migrationBlock = { migration, oldSchemaVersion in
+            if oldSchemaVersion < RealmConstants.lastDBVersion {
+                // ここに変更したmodelデータを全部置き換えるコードを記述する。
+            }
+        }
+        return config
+    }
+}
+```
+
+- まず、上記コードからrealmインスタンスを呼び出すと、realm初期化時にマイグレーションのための設定、`Realm.Configuration`が呼ばれる。具体的には、`schemaVersion`と`migrationBlock`を上記コードのように設定し、DBに変更があるたびにschemaVersionを上げることでマイグレーションが正常に起こるようになる。
+- 不整合の原因は既存データのmodelスキーマと新規作成スキーマが合わないことによって生じるので、既存データを新規に新しいデータに置き換えるコードをif文中に書いていくイメージである。
+
+3. トランザクション実行中は他のトランザクションを実行しないようにするためのextension, `Realm+SafeWrite.swift`を`Extension`ディレクトリに作成する。
+
+```
+import RealmSwift
+
+extension Realm {
+    public func safeWrite(_ block: (() throws -> Void)) throws {
+        if isInWriteTransaction {
+            try block()
+        } else {
+            try write(block)
+        }
+    }
+}
+```
+
+**データ保存のためのServiceを作成する**
+
+1. `Services`ディレクトリ配下に`Storage`を作成し、`App`、`Network`同様に`Implementation`、`Interface`を作成する。
+
+2. `Interface`配下に作成する`ImageStorageService.swift`中で下記のように保存(上書き)、取得用プロトコルを作成する。
+
+```
+protocol ImageStorageService {
+    func saveImages(_ images: [ImageDTO])
+    func getImages(_ imageID: ImageID,
+                   completionHandler: @escaping ([ImageDTO]) -> Void)
+}
+```
+
+3. `Implementation`配下に作成する`DefaultImageStorageService.swift`中で具体処理を記述する。
+
+```
+import Foundation
+import RealmSwift
+
+final class DefaultImageStorageService {
+    // MARK: Private properties
+    private let configuration: Realm.Configuration
+    private var realm: Realm {
+        guard let realm = try? Realm(configuration: configuration) else {
+            fatalError("Failed to initialize Realm.")
+        }
+        return realm
+    }
+
+    // MARK: Lifecycle functions
+    init(configuration: Realm.Configuration = RealmStorage.config()) {
+        self.configuration = configuration
+    }
+}
+
+// MARK: - ImageStorageService
+extension DefaultImageStorageService: ImageStorageService {
+    func saveImages(_ images: [ImageDTO]) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            do {
+                let imageObjects = images.map { ImageObject(id: $0.id,
+                                                            title: $0.title,
+                                                            imageURLString: $0.imageURLString)}
+                try self.realm.safeWrite {
+                    self.realm.add(imageObjects,
+                                   update: .all)
+                }
+            } catch {
+                print(error)
+            }
+        }
+    }
+
+    func getImages(_ imageID: ImageID,
+                   completionHandler: @escaping ([ImageDTO]) -> Void) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            let images = self.realm.objects(ImageObject.self).where { $0.id == imageID }
+            completionHandler(images.map { $0.toDTO() })
+        }
+    }
+}
+```
+
+- `.objects(クラス名.self)`でクラスのオブジェクト全てを取得でき、また`.add(オブジェクト)`でオブジェクトの保存ができる。
+- 保存したオブジェクトはアプリを消去するまでlocal storageに残る。
+
+**StorageServiceの組み込み**
+- まず、getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。
+1. `DefaultImageAppService.swift`, `ImageAppService.swift`をそれぞれ、下記のように書き換える。
+
+```
+final class DefaultImageAppService { 
+    ...
+    private let storageService: ImageStorageService
+
+    init(networkService: ImageNetworkService = DefaultImageNetworkService(),
+         storageService: ImageStorageService = DefaultImageStorageService()) { // <-- 追加
+        self.networkService = networkService
+        self.storageService = storageService // <-- 追加
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
+        networkService.getImages(input) { [weak self] result in
+            switch result {
+                case .success(let images):
+                    self?.storageService.saveImages(images.map { .init(id: $0.id, 
+                                                                       title: $0.title,
+                                                                       imageURLString: $0.urls.raw) }) // <-- 追加
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+
+    func getImages(_ imageID: ImageID,
+                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
+        storageService.getImages(imageID) { images in
+            completionHandler(.success(images.map { $0.toModel() }))
+        }
+    }
+}
+
+```
+
+2. imageIDからデータを取得するための`getImages(_ imageID: ImageID)`を作成する。
+
+- `DefaultImageAppService.swift`
+
+```
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    ...
+    func getImages(_ imageID: ImageID,
+                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
+        storageService.getImages(imageID) { images in
+            completionHandler(.success(images.map { $0.toModel() }))
+        }
+    }
+}
+```
+
+`ImageAppService.swift`
+
+```
+protocol ImageAppService {
+    ... 
+    func getImages(_ imageID: ImageID,
+                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void)
+}
+```
+
+**データの保存取得テスト**
+
+### 各技術の説明
+
+### 各技術の理解
+
+<!-- migrationファイルの書き方 -->
