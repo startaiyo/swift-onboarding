@@ -480,7 +480,8 @@ private extension ImageListViewModel {
         var dummyData = [ImageModel]()
         // ダミーデータ作成
         for i in 0..<12 {
-            dummyData.append(.init(title: "title \(i)",
+            dummyData.append(.init(id: "\(i)",
+                                   title: "title \(i)",
                                    imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81"))
         }
         data = dummyData.map { self.makeCellViewModel($0) }
@@ -1468,6 +1469,10 @@ func setupBindings() {
 
 ### 完成イメージ
 
+|online|offline|
+|-|-|
+|![alt text](images/image_5_1.png)|![alt text](images/image_5_1_2.png)|
+
 ### 手順
 
 <!-- <img src ="images/image_5_1.png" width = "300"> -->
@@ -1582,8 +1587,7 @@ extension Realm {
 ```
 protocol ImageStorageService {
     func saveImages(_ images: [ImageDTO])
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping ([ImageDTO]) -> Void)
+    func getImages(completionHandler: @escaping ([ImageDTO]) -> Void)
 }
 ```
 
@@ -1628,11 +1632,10 @@ extension DefaultImageStorageService: ImageStorageService {
         }
     }
 
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping ([ImageDTO]) -> Void) {
+    func getImages(completionHandler: @escaping ([ImageDTO]) -> Void) {
         DispatchQueue.global().async { [weak self] in
             guard let self else { return }
-            let images = self.realm.objects(ImageObject.self).where { $0.id == imageID }
+            let images = self.realm.objects(ImageObject.self)
             completionHandler(images.map { $0.toDTO() })
         }
     }
@@ -1643,7 +1646,7 @@ extension DefaultImageStorageService: ImageStorageService {
 - 保存したオブジェクトはアプリを消去するまでlocal storageに残る。
 
 **StorageServiceの組み込み**
-- まず、getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。
+- getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。
 1. `DefaultImageAppService.swift`, `ImageAppService.swift`をそれぞれ、下記のように書き換える。
 
 ```
@@ -1662,6 +1665,9 @@ final class DefaultImageAppService {
 extension DefaultImageAppService: ImageAppService {
     func getImages(_ input: ImageInput,
                    completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
+        storageService.getImages { cacheImages in
+            completionHandler(.success(cacheImages.map { $0.toModel() }))
+        }
         networkService.getImages(input) { [weak self] result in
             switch result {
                 case .success(let images):
@@ -1674,45 +1680,16 @@ extension DefaultImageAppService: ImageAppService {
             }
         }
     }
-
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
-        storageService.getImages(imageID) { images in
-            completionHandler(.success(images.map { $0.toModel() }))
-        }
-    }
 }
 
 ```
-
-2. imageIDからデータを取得するための`getImages(_ imageID: ImageID)`を作成する。
-
-- `DefaultImageAppService.swift`
-
-```
-// MARK: - ImageAppService
-extension DefaultImageAppService: ImageAppService {
-    ...
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
-        storageService.getImages(imageID) { images in
-            completionHandler(.success(images.map { $0.toModel() }))
-        }
-    }
-}
-```
-
-`ImageAppService.swift`
-
-```
-protocol ImageAppService {
-    ... 
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void)
-}
-```
+- これでnetworkがオフラインでも、前回に取得したデータが表示されるようになりました。
 
 **データの保存取得テスト**
+
+- 画像こそ見えませんが、テキストは全件ローカルから読み出され、一覧表示されているのがわかります。
+
+<img src ="images/image_5_1_2.png" width = "300">
 
 ### 各技術の説明
 

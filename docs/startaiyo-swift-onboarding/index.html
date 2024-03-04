@@ -517,7 +517,8 @@ private extension ImageListViewModel {
         var dummyData = [ImageModel]()
         // ダミーデータ作成
         for i in 0..&lt;12 {
-            dummyData.append(.init(title: &#34;title \(i)&#34;,
+            dummyData.append(.init(id: &#34;\(i)&#34;,
+                                   title: &#34;title \(i)&#34;,
                                    imageURLString: &#34;https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=bc01c83c3da0425e9baa6c7a9204af81&#34;))
         }
         data = dummyData.map { self.makeCellViewModel($0) }
@@ -1510,6 +1511,14 @@ extension ImageListViewModel: ImageListViewModelInput {
 <li>Firebase(FireStore)</li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p>online</p>
+</td><td colspan="1" rowspan="1"><p>offline</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p class="image-container"><img alt="alt text" src="img/73200ef5f539f12.png"></p>
+</td><td colspan="1" rowspan="1"><p class="image-container"><img alt="alt text" src="img/9990027c42a333e8.png"></p>
+</td></tr>
+</table>
 <h2 is-upgraded>手順</h2>
 <p><strong>localに保存するためのライブラリ、RealmSwift追加</strong></p>
 <ul>
@@ -1620,8 +1629,7 @@ extension Realm {
 </ol>
 <pre><code>protocol ImageStorageService {
     func saveImages(_ images: [ImageDTO])
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping ([ImageDTO]) -&gt; Void)
+    func getImages(completionHandler: @escaping ([ImageDTO]) -&gt; Void)
 }
 </code></pre>
 <ol type="1" start="3">
@@ -1665,11 +1673,10 @@ extension DefaultImageStorageService: ImageStorageService {
         }
     }
 
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping ([ImageDTO]) -&gt; Void) {
+    func getImages(completionHandler: @escaping ([ImageDTO]) -&gt; Void) {
         DispatchQueue.global().async { [weak self] in
             guard let self else { return }
-            let images = self.realm.objects(ImageObject.self).where { $0.id == imageID }
+            let images = self.realm.objects(ImageObject.self)
             completionHandler(images.map { $0.toDTO() })
         }
     }
@@ -1681,7 +1688,7 @@ extension DefaultImageStorageService: ImageStorageService {
 </ul>
 <p><strong>StorageServiceの組み込み</strong></p>
 <ul>
-<li>まず、getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。</li>
+<li>getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。</li>
 </ul>
 <ol type="1">
 <li><code>DefaultImageAppService.swift</code>, <code>ImageAppService.swift</code>をそれぞれ、下記のように書き換える。</li>
@@ -1701,6 +1708,9 @@ extension DefaultImageStorageService: ImageStorageService {
 extension DefaultImageAppService: ImageAppService {
     func getImages(_ input: ImageInput,
                    completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        storageService.getImages { cacheImages in
+            completionHandler(.success(cacheImages.map { $0.toModel() }))
+        }
         networkService.getImages(input) { [weak self] result in
             switch result {
                 case .success(let images):
@@ -1713,41 +1723,17 @@ extension DefaultImageAppService: ImageAppService {
             }
         }
     }
-
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
-        storageService.getImages(imageID) { images in
-            completionHandler(.success(images.map { $0.toModel() }))
-        }
-    }
 }
 
 </code></pre>
-<ol type="1" start="2">
-<li>imageIDからデータを取得するための<code>getImages(_ imageID: ImageID)</code>を作成する。</li>
-</ol>
 <ul>
-<li><code>DefaultImageAppService.swift</code></li>
+<li>これでnetworkがオフラインでも、前回に取得したデータが表示されるようになりました。</li>
 </ul>
-<pre><code>// MARK: - ImageAppService
-extension DefaultImageAppService: ImageAppService {
-    ...
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
-        storageService.getImages(imageID) { images in
-            completionHandler(.success(images.map { $0.toModel() }))
-        }
-    }
-}
-</code></pre>
-<p><code>ImageAppService.swift</code></p>
-<pre><code>protocol ImageAppService {
-    ... 
-    func getImages(_ imageID: ImageID,
-                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
-}
-</code></pre>
 <p><strong>データの保存取得テスト</strong></p>
+<ul>
+<li>画像こそ見えませんが、テキストは全件ローカルから読み出され、一覧表示されているのがわかります。</li>
+</ul>
+<p class="image-container"><img style="width: 300.00px" src="img/9990027c42a333e8.png"></p>
 <h2 is-upgraded>各技術の説明</h2>
 <h2 is-upgraded>各技術の理解</h2>
 
