@@ -1734,6 +1734,22 @@ extension DefaultImageAppService: ImageAppService {
 <li>画像こそ見えませんが、テキストは全件ローカルから読み出され、一覧表示されているのがわかります。</li>
 </ul>
 <p class="image-container"><img style="width: 300.00px" src="img/9990027c42a333e8.png"></p>
+<p><strong>Firebaseのセットアップ</strong></p>
+<ul>
+<li>ここからはFirebaseを使って、ネット上にデータを保存してきます。</li>
+</ul>
+<ol type="1">
+<li>https://console.firebase.google.com/ にアクセスし、任意の名前でプロジェクトを追加してください(Analyticsはなくても大丈夫です)。</li>
+<li>iOSのボタンを押し、BundleIDの入力欄に、アプリ名 &gt; Identityに載っているBundle Identifierを入力します。</li>
+<li><code>GoogleService-info.plist</code>をダウンロードしてください。そしてXcodeの指示されたルートにこのファイルをドラッグ&amp;ドロップし、画像の通りのチェックマークで保存してください。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/23931f314c76d49e.png"></p>
+<ol type="1" start="4">
+<li>指示された通りに、firebaseをAddPackageします。<code>FirebaseFirestoreSwift</code>を選択して追加してください。</li>
+</ol>
+<ul>
+<li>これでFirebaseの準備は完了です。次に、Firebaseを使った操作を記述するクラスを作成していきます。</li>
+</ul>
 <h2 is-upgraded>各技術の説明</h2>
 <h2 is-upgraded>各技術の理解</h2>
 
