@@ -1736,7 +1736,7 @@ extension DefaultImageAppService: ImageAppService {
 <p class="image-container"><img style="width: 300.00px" src="img/9990027c42a333e8.png"></p>
 <p><strong>Firebaseのセットアップ</strong></p>
 <ul>
-<li>ここからはFirebaseを使って、ネット上にデータを保存してきます。</li>
+<li>ここからはFirebaseの一機能であるFirestoreを使って、ネット上にデータを保存してきます。</li>
 </ul>
 <ol type="1">
 <li>https://console.firebase.google.com/ にアクセスし、任意の名前でプロジェクトを追加してください(Analyticsはなくても大丈夫です)。</li>
@@ -1746,11 +1746,160 @@ extension DefaultImageAppService: ImageAppService {
 <p class="image-container"><img style="width: 300.00px" src="img/23931f314c76d49e.png"></p>
 <ol type="1" start="4">
 <li>指示された通りに、firebaseをAddPackageします。<code>FirebaseFirestoreSwift</code>を選択して追加してください。</li>
+<li>Firestoreのページに飛び、テストモードでデータベースを作成してください。(プロビジョニングに若干の時間がかかります)</li>
+<li>作成されたデータベースのページの、「ルール」欄を下記に書き換え、「公開」する。</li>
 </ol>
+<pre><code>service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true; &lt;-- false を trueにする
+    }
+  }
+}
+</code></pre>
 <ul>
 <li>これでFirebaseの準備は完了です。次に、Firebaseを使った操作を記述するクラスを作成していきます。</li>
 </ul>
+<p><strong>Firebaseを使うAppServiceを作成する</strong></p>
+<ol type="1">
+<li>今まで同様、<code>Services/App/Interface</code>に<code>FirebaseAppService.swift</code>, <code>Services/App/Implementation</code>に<code>DefaultFirebaseAppService.swift</code>を作成する。</li>
+<li><code>FirebaseAppService.swift</code>に下記を記述し、protocol定義する。</li>
+</ol>
+<pre><code>protocol FirebaseAppService {
+    static var sharedInstance: FirebaseAppService { get }
+    func createData(to collectionName: String,
+                    of document: String,
+                    data: [String: String])
+    func readAll&lt;T: Codable&gt;(from collectionName: String,
+                             type: T.Type,
+                             completionHandler: @escaping (Result&lt;[T]?, Error&gt;) -&gt; Void)
+}
+
+struct CollectionName {
+    static let images = &#34;images&#34;
+}
+</code></pre>
+<ul>
+<li>sharedInstanceはシングルトンデザインパターンのために定義する変数で、これによりインスタンスの生成を一個に限定することができる。ここでは、Firebaseの初期化コードを一回に限定するために用いている。コードでどのような使い方をするかは次項。</li>
+<li>Firestoreの詳しい使い方については後述するが、CollectionというDBにdocumentというキーを持ったデータを格納していくイメージである。</li>
+</ul>
+<p><strong>ImageをFirestoreに保存、取得</strong></p>
+<ol type="1">
+<li><code>ImageAppService.swift</code>と<code>DefaultImageAppService.swift</code>に、<code>ImageModel</code>をfirestore経由で保存・取得するための関数をそれぞれ追記する。</li>
+</ol>
+<ul>
+<li><code>ImageAppService.swift</code></li>
+</ul>
+<pre><code>protocol ImageAppService {
+    ...
+    func saveImage(_ image: ImageModel)
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
+}
+</code></pre>
+<ul>
+<li><code>DefaultImageAppService.swift</code></li>
+</ul>
+<pre><code>final class DefaultImageAppService {
+    // MARK: Private properties
+    ...
+    private let firebaseAppService: FirebaseAppService
+
+    init(...
+         firebaseAppService: FirebaseAppService = DefaultFirebaseAppService.sharedInstance) {
+        ...
+        self.firebaseAppService = firebaseAppService
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    ...
+    func saveImage(_ image: ImageModel) {
+        firebaseAppService.createData(to: CollectionName.images,
+                                      of: image.id,
+                                      data: [&#34;id&#34;: image.id,
+                                             &#34;title&#34;: image.title,
+                                             &#34;imageURLString&#34;: image.imageURLString])
+    }
+
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        firebaseAppService.readAll(from: CollectionName.images,
+                                   type: ImageDTO.self) { result in
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>ImageListViewModel.swift</code>の<code>applyData</code>を下記に書き換える。</li>
+</ol>
+<pre><code>// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+//                    completionHandler(images.map { self.makeCellViewModel($0) })
+                  // ひとまず、取得できたデータを一件のみ、firestoreに保存する。
+                    self.input.imageAppService.saveImage(images[0])
+//                self.input.imageAppService.getAllImages { result in
+//                    switch result {
+//                    case .success(let images):
+//                        completionHandler(images.map { self.makeCellViewModel($0) })
+//                    case .failure(let error):
+//                        print(error)
+//                    }
+//                }
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li>プロジェクトをビルドすると、データが保存されている。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/ee97f107a76f91e5.png"></p>
+<ol type="1" start="4">
+<li><code>ImageListViewModel.swift</code>の<code>applyData</code>のコメントアウトを下記のように付け替え、再びビルドすると保存したデータのみが表示される。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/1be48cb4fc080e7e.png"></p>
+<ol type="1" start="5">
+<li>保存できることがわかった上で、<code>applyData</code>を元に戻します。</li>
+</ol>
+<pre><code>// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(images.map { self.makeCellViewModel($0) })
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
 <h2 is-upgraded>各技術の説明</h2>
+<p><strong>Realm</strong></p>
+<ul>
+<li>localにRDB的に保存するためのライブラリ。</li>
+</ul>
+<p><strong>Firebase</strong></p>
+<ul>
+<li>モバイルアプリだけでなく、様々なプラットフォームにPaaSとして様々な機能を提供する、Googleのサービス。</li>
+</ul>
 <h2 is-upgraded>各技術の理解</h2>
 
 
