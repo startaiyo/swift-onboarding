@@ -1894,13 +1894,37 @@ extension ImageListViewModel: ImageListViewModelInput {
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>Realm</strong></p>
 <ul>
-<li>localにRDB的に保存するためのライブラリ。</li>
+<li>localにデータを保存するためのライブラリ。</li>
+<li>Swiftでlocalに保存する方法はいくつかあるが、その中でもこちらはDBのリレーションが定義できることに強みがある。</li>
+<li>Objectと呼ばれるデータ型でデータを保存する。カラムとしてサポートされているデータ型は、<code>Bool</code>、<code>Int</code>、<code>Int8</code>、<code>Int16</code>、<code>Int32</code>、<code>Int64</code>、<code>Double</code>、<code>Float</code>、<code>String</code>、<code>Date</code>、<code>Data</code>である。 <ul>
+<li>ただし、一度ビルドした後にカラムを変更するとビルドの度に不整合エラーが出るので、変更の都度マイグレーション設定をする必要がある。</li>
+</ul>
+</li>
+<li>CRUDの記述も簡単にできる。</li>
 </ul>
 <p><strong>Firebase</strong></p>
 <ul>
-<li>モバイルアプリだけでなく、様々なプラットフォームにPaaSとして様々な機能を提供する、Googleのサービス。</li>
+<li>モバイルアプリだけでなく、様々なプラットフォームにPaaSとして様々な機能を提供する、Googleのサービス。複数サービスを横断してデータの授受ができるところに強みがある。</li>
+<li>FirebaseAuthenticationは認証機能全般を提供しており、内部実装を意識せずに簡単にログイン機能/ログアウト機能を作成できる。</li>
+<li>FirestoreはNoSQLを使用したデータ保存のライブラリで、CollectionというまとまりにdocumentというIDを保存し、各documentごとにデータを格納していく。 <ul>
+<li>各documentにcollectionを生やし、サブコレクションとしたり、Referenceを付与することでリレーションの構築が行える。</li>
+</ul>
+</li>
 </ul>
 <h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第六章 取得したデータをリアルタイムで更新する。" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>async/awaitを使った非同期処理を学び、取得したデータをリアルタイムで反映させる。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>async/await</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<h2 is-upgraded>手順</h2>
 
 
       </google-codelab-step>
