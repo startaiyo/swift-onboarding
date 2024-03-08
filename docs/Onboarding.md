@@ -524,9 +524,7 @@ private extension ImageListCell {
     }
 
     func setImage() {
-        Task {
-            imageView.image = UIImage(data: try Data(contentsOf: URL(string: viewModel.imageURLString)!))
-        }
+        imageView.image = UIImage(data: try! Data(contentsOf: URL(string: viewModel.imageURLString)!))
     }
 }
 
@@ -1887,3 +1885,24 @@ async/awaitを使った非同期処理を学び、取得したデータをリア
 ### 完成イメージ
 
 ### 手順
+
+**画像ロード時のワーニングを消す**
+1. `ImageListCell.swift`の`func setImage()`関数を以下に書き換える。
+
+```
+func setImage() {
+    Task {
+        if let url = URL(string: viewModel.imageURLString) {
+            let (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
+            Task { @MainActor in
+                imageView.image = UIImage(data: data)
+            }
+        }
+    }
+}
+```
+- URLSession.shared.dataはasync関数であり、awaitをつけることで、その非同期関数の実行結果が出次第、後続の処理に進むようになる。
+- Taskは時間のかかる処理を他のスレッド内に移譲する、DispatchQueueのようなもの。`@MainActor`をつけるとメインスレッドでの実行になる。
+  - UIの変更に関する処理は全てメインスレッド内で行う必要がある。
+
+- これで、紫色のワーニングは出なくなりました。
