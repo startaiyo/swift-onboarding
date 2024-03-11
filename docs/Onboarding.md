@@ -407,6 +407,7 @@ struct ImageModel {
     let id: ImageID
     let title: String
     let imageURLString: String
+    let createdAt: String
 }
 ```
 
@@ -482,14 +483,16 @@ private extension ImageListViewModel {
         for i in 0..<12 {
             dummyData.append(.init(id: "\(i)",
                                    title: "title \(i)",
-                                   imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81"))
+                                   imageURLString: "https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=bc01c83c3da0425e9baa6c7a9204af81", 
+                                   createdAt: "2022-04-01"))
         }
         data = dummyData.map { self.makeCellViewModel($0) }
     }
 
     func makeCellViewModel(_ model: ImageModel) -> ImageListCellViewModel {
         .init(input: .init(title: model.title,
-                           imageURLString: model.imageURLString))
+                           imageURLString: model.imageURLString,
+                           createdAt: model.createdAt))
     }
 }
 
@@ -1223,7 +1226,8 @@ extension ImageInfoDTO {
     func toModel() -> ImageModel {
         return .init(id: id,
                      title: title,
-                     imageURLString: urls.raw)
+                     imageURLString: urls.raw,
+                     createdAt: createdAt)
     }
 }
 ```
@@ -1341,7 +1345,7 @@ extension DefaultImageAppService: ImageAppService {
             guard let self else { return }
             switch result {
                 case .success(let images):
-                    completionHandler(.success(images.map { $0.toModel() }))
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt < $1.createdAt }))
                 case .failure(let error):
                     completionHandler(.failure(error))
             }
@@ -1505,16 +1509,19 @@ class ImageObject: Object {
     @Persisted(primaryKey: true) var id: String
     @Persisted var title: String
     @Persisted var imageURLString: String
+    @Persisted var createdAt: String
 }
 
 extension ImageObject {
     convenience init(id: String,
                      title: String,
-                     imageURLString: String) {
+                     imageURLString: String,
+                     createdAt: String) {
         self.init()
         self.id = id
         self.title = title
         self.imageURLString = imageURLString
+        self.createdAt = createdAt
     }
 }
 ```
@@ -1619,7 +1626,8 @@ extension DefaultImageStorageService: ImageStorageService {
             do {
                 let imageObjects = images.map { ImageObject(id: $0.id,
                                                             title: $0.title,
-                                                            imageURLString: $0.imageURLString)}
+                                                            imageURLString: $0.imageURLString,
+                                                            createdAt: $0.createdAt)}
                 try self.realm.safeWrite {
                     self.realm.add(imageObjects,
                                    update: .all)
@@ -1634,7 +1642,7 @@ extension DefaultImageStorageService: ImageStorageService {
         DispatchQueue.global().async { [weak self] in
             guard let self else { return }
             let images = self.realm.objects(ImageObject.self)
-            completionHandler(images.map { $0.toDTO() })
+            completionHandler(images.map { $0.toDTO() }.sorted { $0.createdAt < $1.createdAt })
         }
     }
 }
@@ -1662,25 +1670,38 @@ final class DefaultImageAppService {
 // MARK: - ImageAppService
 extension DefaultImageAppService: ImageAppService {
     func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
                    completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
-        storageService.getImages { cacheImages in
-            completionHandler(.success(cacheImages.map { $0.toModel() }))
-        }
+        
         networkService.getImages(input) { [weak self] result in
             switch result {
                 case .success(let images):
-                    self?.storageService.saveImages(images.map { .init(id: $0.id, 
+                    self?.storageService.saveImages(images.map { .init(id: $0.id,
                                                                        title: $0.title,
-                                                                       imageURLString: $0.urls.raw) }) // <-- 追加
-                    completionHandler(.success(images.map { $0.toModel() }))
+                                                                       imageURLString: $0.urls.raw,
+                                                                       createdAt: $0.createdAt) })
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt < $1.createdAt }))
                 case .failure(let error):
                     completionHandler(.failure(error))
+                    self?.storageService.getImages { cacheImages in
+                        completionHandler(.success(cacheImages.map { $0.toModel() }))
+                    }
             }
         }
     }
 }
 
 ```
+
+```
+protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
+                   completionHandler: @escaping (Result<[ImageModel], Error>) -> Void)
+    ...
+}
+```
+
 - これでnetworkがオフラインでも、前回に取得したデータが表示されるようになりました。
 
 **データの保存取得テスト**
@@ -1779,7 +1800,8 @@ extension DefaultImageAppService: ImageAppService {
                                       of: image.id,
                                       data: ["id": image.id,
                                              "title": image.title,
-                                             "imageURLString": image.imageURLString])
+                                             "imageURLString": image.imageURLString, 
+                                             "createdAt": image.createdAt])
     }
 
     func getAllImages(completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
@@ -1902,7 +1924,78 @@ func setImage() {
 }
 ```
 - URLSession.shared.dataはasync関数であり、awaitをつけることで、その非同期関数の実行結果が出次第、後続の処理に進むようになる。
-- Taskは時間のかかる処理を他のスレッド内に移譲する、DispatchQueueのようなもの。`@MainActor`をつけるとメインスレッドでの実行になる。
+- Taskは時間のかかる処理を他のスレッド内に移譲する、DispatchQueueのようなもの。`@MainActor`をつけるとメインスレッドでの実行になる。`async/await`処理は必ずTask内で行う必要がある。
   - UIの変更に関する処理は全てメインスレッド内で行う必要がある。
 
 - これで、紫色のワーニングは出なくなりました。
+
+**検索可能にする**
+1. `ImageListViewController.storyboard`上に、`UISearchBar`を"+"ボタンから選択して載せる。
+2. 図のように、`ImageCollectionView`の上端を`SearchBar`の下端に合わせ、そのほかはsafeAreaに沿って広がるようにAutolayoutの設定を行う。
+
+<img src ="images/image_6_2.png" width = "300">
+
+3. `ImageListViewController.swift`上でIBOutlet接続をし、下記のようなコードを記述する。
+
+```
+import UIKit
+
+final class ImageListViewController: UIViewController {
+    ...
+    @IBOutlet private var searchBar: UISearchBar! {
+        didSet {
+            searchBar.backgroundColor = .yellow
+            searchBar.layer.borderColor = UIColor.yellow.cgColor
+            searchBar.searchBarStyle = .minimal
+            searchBar.delegate = self
+        }
+    }
+    ...
+}
+...
+extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        Task { [weak self] in
+            guard let text = searchBar.text,
+                  let self
+            else {
+                return
+            }
+            let imageRows = try await self.viewModel.search(text)
+            self.dataSource.apply(imageRows)
+        }
+    }
+}
+```
+
+4. `ImageListViewModel.swift`内に`search`関数を追加する。
+
+```
+protocol ImageListViewModelInput {
+    ...
+    func search(_ text: String) async throws -> [ImageListCellViewModel]
+}
+...
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    ...
+    func search(_ text: String) async throws -> [ImageListCellViewModel] {
+        try await withCheckedThrowingContinuation({ continuation in
+            input.imageAppService.getImages(.init(searchQuery: text)) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                    case .success(let images):
+                        continuation.resume(returning: images.map { self.makeCellViewModel($0)})
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                }
+            }
+        })
+    }
+}
+```
+
+5. `applyData()`関数はもう不要なので、使用部分と関数自体を全て消す。
+- `ImageListViewController.swift`の`setupBindings()`内
+- `ImageListViewModel.swift`の`ImageListViewModelInput`, extensionの`ImageListViewModelInput`内
+　- 関数自体を消すと赤色のワーニングが出るので、それら全てを消せば大丈夫です。
