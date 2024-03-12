@@ -1715,7 +1715,9 @@ extension DefaultImageAppService: ImageAppService {
     func getImages(_ input: ImageInput,
                    cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
                    completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
-        
+        storageService.getImages { cachedImages in
+            cacheCompletionHandler(cachedImages.map { $0.toModel() })
+        }
         networkService.getImages(input) { [weak self] result in
             switch result {
                 case .success(let images):
@@ -1941,6 +1943,7 @@ extension ImageListViewModel: ImageListViewModelInput {
 <li>async/await</li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/61df8ae1a80cc6f3.png"></p>
 <h2 is-upgraded>手順</h2>
 <p><strong>画像ロード時のワーニングを消す</strong></p>
 <ol type="1">
@@ -2015,26 +2018,135 @@ extension ImageListViewController: UISearchBarDelegate {
 extension ImageListViewModel: ImageListViewModelInput {
     ...
     func search(_ text: String) async throws -&gt; [ImageListCellViewModel] {
-        try await withCheckedThrowingContinuation({ continuation in
-            input.imageAppService.getImages(.init(searchQuery: text)) { [weak self] result in
+        var imageRows = [ImageListCellViewModel]()
+        return try await withCheckedThrowingContinuation({ continuation in
+            input.imageAppService.getImages(.init(searchQuery: text),
+                                            cacheCompletionHandler: { cached in
+                imageRows = cached.map { self.makeCellViewModel($0) }
+            }) { [weak self] result in
                 guard let self else { return }
                 switch result {
                     case .success(let images):
-                        continuation.resume(returning: images.map { self.makeCellViewModel($0)})
+                        imageRows = images.map { self.makeCellViewModel($0)}
                     case .failure(let error):
                         continuation.resume(throwing: error)
                 }
+                continuation.resume(returning: imageRows)
             }
         })
     }
 }
 </code></pre>
 <ol type="1" start="5">
-<li><code>applyData()</code>関数はもう不要なので、使用部分と関数自体を全て消す。</li>
+<li><code>applyData()</code>関数、<code>rows</code>はもう不要なので、使用部分と関数自体、変数自体を全て消す。</li>
 </ol>
 <ul>
+<li><code>applyData()</code></li>
 <li><code>ImageListViewController.swift</code>の<code>setupBindings()</code>内</li>
 <li><code>ImageListViewModel.swift</code>の<code>ImageListViewModelInput</code>, extensionの<code>ImageListViewModelInput</code>内 　- 関数自体を消すと赤色のワーニングが出るので、それら全てを消せば大丈夫です。</li>
+<li><code>rows</code></li>
+<li><code>ImageListViewModel.swift</code>の<code>ImageListViewModelOutput</code>, extensionの<code>ImageListViewModelOutput</code>内</li>
+</ul>
+<p><strong>Observerパターンを使って書き換える</strong></p>
+<ul>
+<li>このままでも検索結果がリアルタイムで反映されるのですが、Inputメソッド(つまり、ViewModelに影響を及ぼす方向の処理)であるはずの<code>search()</code>が、ViewへのOutput(つまり、Viewに影響を与える処理)の役割も果たしており、微妙です。 <ul>
+<li>本来なら、<code>search()</code>はViewModel内でデータを取得するトリガーとなる処理で、取得されたデータをViewに反映するのは別のOutputのメソッド(または変数)でなくてはいけないはずです。</li>
+</ul>
+</li>
+<li>そこで登場するのがObserverパターンによる実装です。変数がリアルタイムでViewModelでの変更をViewに伝えることができます。</li>
+</ul>
+<ol type="1">
+<li><code>ImageListViewModel.swift</code>にObserverとなるSubjectを記述する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream&lt;[ImageListCellViewModel]&gt; { get }
+}
+...
+final class ImageListViewModel {
+    ...
+    private var imagesHandler: (([ImageListCellViewModel]) -&gt; Void)? // &lt;-- 追加
+    ...
+}
+...
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream&lt;[ImageListCellViewModel]&gt; {
+        return AsyncStream { continuation in
+            imagesHandler = { images in
+                continuation.yield(images)
+            }
+        }
+    }
+}
+...
+</code></pre>
+<pre><code>...
+private extension ImageListViewController {
+    func setupBindings() {
+        imagesTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await items in self.viewModel.imageListCellViewModelsSubject {
+                self.dataSource.apply(items)
+            }
+        }
+    }
+}
+
+extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        Task { [weak self] in
+            guard let text = searchBar.text,
+                  let self
+            else {
+                return
+            }
+            let imageRows = try await self.viewModel.search(text)
+            self.dataSource.apply(imageRows)
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>search()</code>をちゃんとしたInputの形に書き換える。</li>
+</ol>
+<pre><code>protocol ImageListViewModelInput {
+    func search(_ text: String)
+}
+...
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func search(_ text: String) {
+        input.imageAppService.getImages(.init(searchQuery: text),
+                                        cacheCompletionHandler: { [weak self] cached in
+            guard let self else { return }
+            self.imagesHandler?(cached.map { self.makeCellViewModel($0) })
+        }) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    self.imagesHandler?(images.map{ self.makeCellViewModel($0)})
+                case .failure(let error):
+                    print(error)
+            }
+            
+        }
+    }
+}
+
+</code></pre>
+<ol type="1" start="4">
+<li><code>ImageListViewController.swift</code>の<code>UISearchBarDelegate</code>部分を書き換える。</li>
+</ol>
+<pre><code>extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        guard let text = searchBar.text else { return }
+        self.viewModel.search(text)
+    }
+}
+
+</code></pre>
+<ul>
+<li>これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。</li>
 </ul>
 
 

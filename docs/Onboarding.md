@@ -1672,7 +1672,9 @@ extension DefaultImageAppService: ImageAppService {
     func getImages(_ input: ImageInput,
                    cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
                    completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
-        
+        storageService.getImages { cachedImages in
+            cacheCompletionHandler(cachedImages.map { $0.toModel() })
+        }
         networkService.getImages(input) { [weak self] result in
             switch result {
                 case .success(let images):
@@ -1905,6 +1907,7 @@ async/awaitを使った非同期処理を学び、取得したデータをリア
 - async/await
 
 ### 完成イメージ
+<img src ="images/image_6_1.png" width = "300">
 
 ### 手順
 
@@ -1980,22 +1983,134 @@ protocol ImageListViewModelInput {
 extension ImageListViewModel: ImageListViewModelInput {
     ...
     func search(_ text: String) async throws -> [ImageListCellViewModel] {
-        try await withCheckedThrowingContinuation({ continuation in
-            input.imageAppService.getImages(.init(searchQuery: text)) { [weak self] result in
+        var imageRows = [ImageListCellViewModel]()
+        return try await withCheckedThrowingContinuation({ continuation in
+            input.imageAppService.getImages(.init(searchQuery: text),
+                                            cacheCompletionHandler: { cached in
+                imageRows = cached.map { self.makeCellViewModel($0) }
+            }) { [weak self] result in
                 guard let self else { return }
                 switch result {
                     case .success(let images):
-                        continuation.resume(returning: images.map { self.makeCellViewModel($0)})
+                        imageRows = images.map { self.makeCellViewModel($0)}
                     case .failure(let error):
                         continuation.resume(throwing: error)
                 }
+                continuation.resume(returning: imageRows)
             }
         })
     }
 }
 ```
 
-5. `applyData()`関数はもう不要なので、使用部分と関数自体を全て消す。
+5. `applyData()`関数、`rows`はもう不要なので、使用部分と関数自体、変数自体を全て消す。
+* `applyData()`
 - `ImageListViewController.swift`の`setupBindings()`内
 - `ImageListViewModel.swift`の`ImageListViewModelInput`, extensionの`ImageListViewModelInput`内
 　- 関数自体を消すと赤色のワーニングが出るので、それら全てを消せば大丈夫です。
+* `rows`
+- `ImageListViewModel.swift`の`ImageListViewModelOutput`, extensionの`ImageListViewModelOutput`内
+
+**Observerパターンを使って書き換える**
+- このままでも検索結果がリアルタイムで反映されるのですが、Inputメソッド(つまり、ViewModelに影響を及ぼす方向の処理)であるはずの`search()`が、ViewへのOutput(つまり、Viewに影響を与える処理)の役割も果たしており、微妙です。
+  - 本来なら、`search()`はViewModel内でデータを取得するトリガーとなる処理で、取得されたデータをViewに反映するのは別のOutputのメソッド(または変数)でなくてはいけないはずです。
+- そこで登場するのがObserverパターンによる実装です。変数がリアルタイムでViewModelでの変更をViewに伝えることができます。
+
+1. `ImageListViewModel.swift`にObserverとなるSubjectを記述する。
+
+```
+protocol ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream<[ImageListCellViewModel]> { get }
+}
+...
+final class ImageListViewModel {
+    ...
+    private var imagesHandler: (([ImageListCellViewModel]) -> Void)? // <-- 追加
+    ...
+}
+...
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream<[ImageListCellViewModel]> {
+        return AsyncStream { continuation in
+            imagesHandler = { images in
+                continuation.yield(images)
+            }
+        }
+    }
+}
+...
+```
+
+2. 
+
+```
+...
+private extension ImageListViewController {
+    func setupBindings() {
+        imagesTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await items in self.viewModel.imageListCellViewModelsSubject {
+                self.dataSource.apply(items)
+            }
+        }
+    }
+}
+
+extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        Task { [weak self] in
+            guard let text = searchBar.text,
+                  let self
+            else {
+                return
+            }
+            let imageRows = try await self.viewModel.search(text)
+            self.dataSource.apply(imageRows)
+        }
+    }
+}
+```
+
+3. `search()`をちゃんとしたInputの形に書き換える。
+
+```
+protocol ImageListViewModelInput {
+    func search(_ text: String)
+}
+...
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func search(_ text: String) {
+        input.imageAppService.getImages(.init(searchQuery: text),
+                                        cacheCompletionHandler: { [weak self] cached in
+            guard let self else { return }
+            self.imagesHandler?(cached.map { self.makeCellViewModel($0) })
+        }) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    self.imagesHandler?(images.map{ self.makeCellViewModel($0)})
+                case .failure(let error):
+                    print(error)
+            }
+            
+        }
+    }
+}
+
+```
+
+4. `ImageListViewController.swift`の`UISearchBarDelegate`部分を書き換える。
+
+```
+extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        guard let text = searchBar.text else { return }
+        self.viewModel.search(text)
+    }
+}
+
+```
+
+- これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。
