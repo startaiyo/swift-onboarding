@@ -1940,7 +1940,7 @@ extension ImageListViewModel: ImageListViewModelInput {
 <p>async/awaitを使った非同期処理を学び、取得したデータをリアルタイムで反映させる。</p>
 <h2 is-upgraded>本章で学ぶこと</h2>
 <ul>
-<li>async/await</li>
+<li><a href="https://developer.apple.com/documentation/swift/concurrency" target="_blank">async/await</a></li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
 <p class="image-container"><img style="width: 300.00px" src="img/61df8ae1a80cc6f3.png"></p>
@@ -2080,6 +2080,19 @@ extension ImageListViewModel: ImageListViewModelOutput {
 }
 ...
 </code></pre>
+<ul>
+<li><code>AsyncStream</code>は値が後から入ってくるListのようなイメージ。(そのため、値が入ってくるのを待っている状態であり、値が入ってきた際にawaitの値に対応した処理が行える。) <ul>
+<li><code>AsyncStream</code>に値を入れる際には、クロージャ内の<code>continuation</code>の<code>yield</code>メソッドの引数に値を入れれば良い。 <ul>
+<li>こちらは、<code>imagesHandler()</code>関数が呼ばれた際、引数である<code>images</code>が<code>AsyncStream</code>に入る。</li>
+<li>結果、<code>imageListCellViewModelsSubject</code>に対して施した<code>for await</code>部分に<code>images</code>が代入される。詳しくは後述。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ol type="1" start="2">
+<li><code>ImageListViewController.swift</code>内でviewModelとviewの紐付け(バインディング)を行うコードを記述する。</li>
+</ol>
 <pre><code>...
 private extension ImageListViewController {
     func setupBindings() {
@@ -2091,20 +2104,7 @@ private extension ImageListViewController {
         }
     }
 }
-
-extension ImageListViewController: UISearchBarDelegate {
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        Task { [weak self] in
-            guard let text = searchBar.text,
-                  let self
-            else {
-                return
-            }
-            let imageRows = try await self.viewModel.search(text)
-            self.dataSource.apply(imageRows)
-        }
-    }
-}
+...
 </code></pre>
 <ol type="1" start="3">
 <li><code>search()</code>をちゃんとしたInputの形に書き換える。</li>
@@ -2148,6 +2148,41 @@ extension ImageListViewModel: ImageListViewModelInput {
 <ul>
 <li>これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。</li>
 </ul>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>async/await</strong></p>
+<ul>
+<li>非同期で行う処理を同期処理のような書き方で記述するために追加された機能。Closureを使うものに比べてネストが深くなりにくい。</li>
+<li><code>async</code>で実行した、時間のかかる関数の結果を待ち、結果が出てから次の処理に進む。 <ul>
+<li>上から下に順番に実行されるようになり、非常に可読性が上がる。</li>
+</ul>
+</li>
+</ul>
+<p><strong>Task</strong></p>
+<ul>
+<li>非同期の処理を行う作業単位。全ての非同期処理が何らかの<code>Task</code>として実行される。</li>
+<li>メインスレッドで行う<code>Task</code>(UIに関する処理など)は<code>@MainActor</code>という修飾子を付与する。</li>
+</ul>
+<p><strong>Observerパターン</strong></p>
+<ul>
+<li>ソフトウェア開発において良い方法とされるノウハウの蓄積であるデザインパターンの一種。</li>
+<li>観察対象に何かしらの変更があった際に、全ての観察者に通知される仕組みのこと。</li>
+<li>本項目においては、<code>imageListCellViewModelsSubject</code>が観察対象(Observable)であり、それが<code>ImageListViewController</code>にバインディングした<code>Task</code>によって観察される。</li>
+<li>こちらを用いると、ViewModelへの変更(Input)とその変更に対するViewの変更(Output)を分離しやすくなる。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第七章 エラーを表示する" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>何かしらの不具合が生じた際に、それを適切にユーザーに伝える方法(エラーハンドリング方法)を学んでいきます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>UIAlertViewController</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<h2 is-upgraded>手順</h2>
 
 
       </google-codelab-step>

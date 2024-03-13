@@ -1904,7 +1904,7 @@ extension ImageListViewModel: ImageListViewModelInput {
 async/awaitを使った非同期処理を学び、取得したデータをリアルタイムで反映させる。
 
 ### 本章で学ぶこと
-- async/await
+- [async/await](https://developer.apple.com/documentation/swift/concurrency)
 
 ### 完成イメージ
 <img src ="images/image_6_1.png" width = "300">
@@ -2042,7 +2042,12 @@ extension ImageListViewModel: ImageListViewModelOutput {
 ...
 ```
 
-2. 
+- `AsyncStream`は値が後から入ってくるListのようなイメージ。(そのため、値が入ってくるのを待っている状態であり、値が入ってきた際にawaitの値に対応した処理が行える。)
+  - `AsyncStream`に値を入れる際には、クロージャ内の`continuation`の`yield`メソッドの引数に値を入れれば良い。
+    - こちらは、`imagesHandler()`関数が呼ばれた際、引数である`images`が`AsyncStream`に入る。
+    - 結果、`imageListCellViewModelsSubject`に対して施した`for await`部分に`images`が代入される。詳しくは後述。
+
+2. `ImageListViewController.swift`内でviewModelとviewの紐付け(バインディング)を行うコードを記述する。
 
 ```
 ...
@@ -2056,20 +2061,7 @@ private extension ImageListViewController {
         }
     }
 }
-
-extension ImageListViewController: UISearchBarDelegate {
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        Task { [weak self] in
-            guard let text = searchBar.text,
-                  let self
-            else {
-                return
-            }
-            let imageRows = try await self.viewModel.search(text)
-            self.dataSource.apply(imageRows)
-        }
-    }
-}
+...
 ```
 
 3. `search()`をちゃんとしたInputの形に書き換える。
@@ -2114,3 +2106,35 @@ extension ImageListViewController: UISearchBarDelegate {
 ```
 
 - これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。
+
+### 各技術の説明
+**async/await**
+- 非同期で行う処理を同期処理のような書き方で記述するために追加された機能。Closureを使うものに比べてネストが深くなりにくい。
+- `async`で実行した、時間のかかる関数の結果を待ち、結果が出てから次の処理に進む。
+  - 上から下に順番に実行されるようになり、非常に可読性が上がる。
+
+**Task**
+- 非同期の処理を行う作業単位。全ての非同期処理が何らかの`Task`として実行される。
+- メインスレッドで行う`Task`(UIに関する処理など)は`@MainActor`という修飾子を付与する。
+
+**Observerパターン**
+- ソフトウェア開発において良い方法とされるノウハウの蓄積であるデザインパターンの一種。
+- 観察対象に何かしらの変更があった際に、全ての観察者に通知される仕組みのこと。
+- 本項目においては、`imageListCellViewModelsSubject`が観察対象(Observable)であり、それが`ImageListViewController`にバインディングした`Task`によって観察される。
+- こちらを用いると、ViewModelへの変更(Input)とその変更に対するViewの変更(Output)を分離しやすくなる。
+
+### 各技術の理解
+
+<!-- Task -->
+
+## 第七章 エラーを表示する
+
+### 概要
+何かしらの不具合が生じた際に、それを適切にユーザーに伝える方法(エラーハンドリング方法)を学んでいきます。
+
+### 本章で学ぶこと
+- UIAlertViewController
+
+### 完成イメージ
+
+### 手順
