@@ -2133,8 +2133,19 @@ extension ImageListViewController: UISearchBarDelegate {
 何かしらの不具合が生じた際に、それを適切にユーザーに伝える方法(エラーハンドリング方法)を学んでいきます。
 
 ### 本章で学ぶこと
-- UIAlertViewController
+- UIAlertController
 
 ### 完成イメージ
 
 ### 手順
+
+### 各技術の説明
+**UIAlertController**
+- アラートを表示するためのViewController。ViewControllerと同じく、`present()`によって呼び出す。
+- ボタンを押した際に行う処理は、`UIAlertAction`内に記述する。
+
+**Task**
+
+**Observerパターン**
+
+### 各技術の理解
