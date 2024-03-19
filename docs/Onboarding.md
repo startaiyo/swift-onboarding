@@ -2074,19 +2074,20 @@ protocol ImageListViewModelInput {
 // MARK: - ImageListViewModelInput
 extension ImageListViewModel: ImageListViewModelInput {
     func search(_ text: String) {
+        var images: [ImageListCellViewModel]?
         input.imageAppService.getImages(.init(searchQuery: text),
                                         cacheCompletionHandler: { [weak self] cached in
             guard let self else { return }
-            self.imagesHandler?(cached.map { self.makeCellViewModel($0) })
+            images = cached.map { self.makeCellViewModel($0) }
         }) { [weak self] result in
             guard let self else { return }
             switch result {
-                case .success(let images):
-                    self.imagesHandler?(images.map{ self.makeCellViewModel($0)})
+                case .success(let remoteImages):
+                    images = remoteImages.map{ self.makeCellViewModel($0)}
                 case .failure(let error):
                     print(error)
             }
-            
+            self.imagesHandler?(images ?? [])
         }
     }
 }
@@ -2106,6 +2107,67 @@ extension ImageListViewController: UISearchBarDelegate {
 ```
 
 - これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。
+
+**取得のたびにキャッシュの画像を全削除するようにする**
+- このままだとキャッシュに画像を取得した分だけ無限にデータが溜まっていくため、ネットワークから取得した画像を保存する直前に前に取得した画像データを全て削除するように処理を書き換えます。
+1. `ImageStorageService.swift`に下記関数を追加する。
+
+```
+protocol ImageStorageService {
+    ...
+    func deleteAllImages(completionHandler: @escaping () -> Void)
+}
+```
+
+2. `DefaultImageStorageService.swift`に下記関数を追加する。
+
+```
+func deleteAllImages(completionHandler: @escaping () -> Void) {
+    DispatchQueue.global().async { [weak self] in
+        guard let self else { return }
+        do {
+            try self.realm.safeWrite {
+                let objectsToDelete = self.realm.objects(ImageObject.self)
+                self.realm.delete(objectsToDelete)
+            }
+            completionHandler()
+        } catch {
+            completionHandler()
+        }
+    }
+}
+```
+
+3. `DefaultImageStorageService.swift`の`getImages`を下記に書き換える。
+
+```
+func getImages(_ input: ImageInput,
+                cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
+                completionHandler: @escaping (Result<[ImageModel], Error>) -> Void) {
+    storageService.getImages { cachedImages in
+        cacheCompletionHandler(cachedImages.map { $0.toModel() })
+    }
+    networkService.getImages(input) { [weak self] result in
+        switch result {
+            case .success(let images):
+                self?.storageService.deleteAllImages {
+                    self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                        title: $0.title,
+                                                                        imageURLString: $0.urls.raw,
+                                                                        createdAt: $0.createdAt) })
+                }
+                completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt < $1.createdAt }))
+            case .failure(let error):
+                completionHandler(.failure(error))
+                self?.storageService.getImages { cacheImages in
+                    completionHandler(.success(cacheImages.map { $0.toModel() }))
+                }
+        }
+    }
+}
+```
+
+- これでlocalの画像データを全て削除してから改めて画像を保存するようになりました。
 
 ### 各技術の説明
 **async/await**
@@ -2136,16 +2198,36 @@ extension ImageListViewController: UISearchBarDelegate {
 - UIAlertController
 
 ### 完成イメージ
+<img src ="images/image_7_1.png" width = "300">
 
 ### 手順
+**エラー表示用のUIViewController Extensionの作成**
+1. `Extension`ディレクトリに`UIViewController+Extras.swift`を作成し、以下を記述する。
+
+```
+import UIKit
+
+extension UIViewController {
+    func handleGeneralError(_ error: Error,
+                            onDismissHandler: (() -> Void)? = nil) {
+        let alert = UIAlertController(title: "An error occured",
+                                      message: error.localizedDescription,
+                                      preferredStyle: .alert)
+        alert.addAction(.init(title: "OK",
+                              style: .default) {_ in
+            onDismissHandler?()
+        })
+        self.present(alert,
+                     animated: true)
+    }
+}
+```
+- ここで表示するエラーによってはメッセージを変えたり、アラート内のボタン押下時のアクションの変更が行えたりします。
+- 引数内の`onDismissHandler()`では、OKボタンを押した後の動きを定義できます。
 
 ### 各技術の説明
 **UIAlertController**
 - アラートを表示するためのViewController。ViewControllerと同じく、`present()`によって呼び出す。
 - ボタンを押した際に行う処理は、`UIAlertAction`内に記述する。
-
-**Task**
-
-**Observerパターン**
 
 ### 各技術の理解

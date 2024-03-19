@@ -2116,19 +2116,20 @@ private extension ImageListViewController {
 // MARK: - ImageListViewModelInput
 extension ImageListViewModel: ImageListViewModelInput {
     func search(_ text: String) {
+        var images: [ImageListCellViewModel]?
         input.imageAppService.getImages(.init(searchQuery: text),
                                         cacheCompletionHandler: { [weak self] cached in
             guard let self else { return }
-            self.imagesHandler?(cached.map { self.makeCellViewModel($0) })
+            images = cached.map { self.makeCellViewModel($0) }
         }) { [weak self] result in
             guard let self else { return }
             switch result {
-                case .success(let images):
-                    self.imagesHandler?(images.map{ self.makeCellViewModel($0)})
+                case .success(let remoteImages):
+                    images = remoteImages.map{ self.makeCellViewModel($0)}
                 case .failure(let error):
                     print(error)
             }
-            
+            self.imagesHandler?(images ?? [])
         }
     }
 }
@@ -2147,6 +2148,67 @@ extension ImageListViewModel: ImageListViewModelInput {
 </code></pre>
 <ul>
 <li>これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。</li>
+</ul>
+<p><strong>取得のたびにキャッシュの画像を全削除するようにする</strong></p>
+<ul>
+<li>このままだとキャッシュに画像を取得した分だけ無限にデータが溜まっていくため、ネットワークから取得した画像を保存する直前に前に取得した画像データを全て削除するように処理を書き換えます。</li>
+</ul>
+<ol type="1">
+<li><code>ImageStorageService.swift</code>に下記関数を追加する。</li>
+</ol>
+<pre><code>protocol ImageStorageService {
+    ...
+    func deleteAllImages(completionHandler: @escaping () -&gt; Void)
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>DefaultImageStorageService.swift</code>に下記関数を追加する。</li>
+</ol>
+<pre><code>func deleteAllImages(completionHandler: @escaping () -&gt; Void) {
+    DispatchQueue.global().async { [weak self] in
+        guard let self else { return }
+        do {
+            try self.realm.safeWrite {
+                let objectsToDelete = self.realm.objects(ImageObject.self)
+                self.realm.delete(objectsToDelete)
+            }
+            completionHandler()
+        } catch {
+            completionHandler()
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>DefaultImageStorageService.swift</code>の<code>getImages</code>を下記に書き換える。</li>
+</ol>
+<pre><code>func getImages(_ input: ImageInput,
+                cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+    storageService.getImages { cachedImages in
+        cacheCompletionHandler(cachedImages.map { $0.toModel() })
+    }
+    networkService.getImages(input) { [weak self] result in
+        switch result {
+            case .success(let images):
+                self?.storageService.deleteAllImages {
+                    self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                        title: $0.title,
+                                                                        imageURLString: $0.urls.raw,
+                                                                        createdAt: $0.createdAt) })
+                }
+                completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt &lt; $1.createdAt }))
+            case .failure(let error):
+                completionHandler(.failure(error))
+                self?.storageService.getImages { cacheImages in
+                    completionHandler(.success(cacheImages.map { $0.toModel() }))
+                }
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>これでlocalの画像データを全て削除してから改めて画像を保存するようになりました。</li>
 </ul>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>async/await</strong></p>
@@ -2182,15 +2244,39 @@ extension ImageListViewModel: ImageListViewModelInput {
 <li>UIAlertController</li>
 </ul>
 <h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/59ed34378c1f6dc2.png"></p>
 <h2 is-upgraded>手順</h2>
+<p><strong>エラー表示用のUIViewController Extensionの作成</strong></p>
+<ol type="1">
+<li><code>Extension</code>ディレクトリに<code>UIViewController+Extras.swift</code>を作成し、以下を記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+extension UIViewController {
+    func handleGeneralError(_ error: Error,
+                            onDismissHandler: (() -&gt; Void)? = nil) {
+        let alert = UIAlertController(title: &#34;An error occured&#34;,
+                                      message: error.localizedDescription,
+                                      preferredStyle: .alert)
+        alert.addAction(.init(title: &#34;OK&#34;,
+                              style: .default) {_ in
+            onDismissHandler?()
+        })
+        self.present(alert,
+                     animated: true)
+    }
+}
+</code></pre>
+<ul>
+<li>ここで表示するエラーによってはメッセージを変えたり、アラート内のボタン押下時のアクションの変更が行えたりします。</li>
+<li>引数内の<code>onDismissHandler()</code>では、OKボタンを押した後の動きを定義できます。</li>
+</ul>
 <h2 is-upgraded>各技術の説明</h2>
 <p><strong>UIAlertController</strong></p>
 <ul>
 <li>アラートを表示するためのViewController。ViewControllerと同じく、<code>present()</code>によって呼び出す。</li>
 <li>ボタンを押した際に行う処理は、<code>UIAlertAction</code>内に記述する。</li>
 </ul>
-<p><strong>Task</strong></p>
-<p><strong>Observerパターン</strong></p>
 <h2 is-upgraded>各技術の理解</h2>
 
 
