@@ -2050,6 +2050,13 @@ extension ImageListViewModel: ImageListViewModelOutput {
 2. `ImageListViewController.swift`内でviewModelとviewの紐付け(バインディング)を行うコードを記述する。
 
 ```
+final class ImageListViewController: UIViewController {
+    ...
+    deinit {
+        imagesTask?.cancel()
+        ...
+    }
+}
 ...
 private extension ImageListViewController {
     func setupBindings() {
@@ -2063,6 +2070,8 @@ private extension ImageListViewController {
 }
 ...
 ```
+
+- `deinit`は、インスタンスへの参照を行うものがなくなり、インスタンスが除去される時に呼ばれる関数。毎`deinit`ごとに形成している`Observer`をキャンセルしたいため、上記コードを記述している。
 
 3. `search()`をちゃんとしたInputの形に書き換える。
 
@@ -2224,6 +2233,84 @@ extension UIViewController {
 ```
 - ここで表示するエラーによってはメッセージを変えたり、アラート内のボタン押下時のアクションの変更が行えたりします。
 - 引数内の`onDismissHandler()`では、OKボタンを押した後の動きを定義できます。
+
+2. `ImageListViewModel.swift`にリアルタイムでErrorを表示するためのSubjectを作成する。
+
+```
+protocol ImageListViewModelOutput {
+    ...
+    var errorsSubject: AsyncStream<ErrorsModel> { get }
+}
+...
+final class ImageListViewModel {
+    ...
+    private var errorsHandler: ((ErrorsModel) -> Void)?
+    ...
+}
+...
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    ...
+    var errorsSubject: AsyncStream<ErrorsModel> {
+        return AsyncStream { continuation in
+            errorsHandler = { error in
+                continuation.yield(error)
+            }
+        }
+    }
+}
+
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func search(_ text: String) {
+        var images: [ImageListCellViewModel]?
+        input.imageAppService.getImages(.init(searchQuery: text),
+                                        cacheCompletionHandler: { [weak self] cached in
+            guard let self else { return }
+            images = cached.map { self.makeCellViewModel($0) }
+        }) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let remoteImages):
+                    images = remoteImages.map{ self.makeCellViewModel($0)}
+                case .failure(let error):
+                    self.errorsHandler?(error) <-- // 変更
+            }
+            self.imagesHandler?(images ?? [])
+        }
+    }
+}
+
+```
+
+3. 2.によってSubjectに送出されたエラーを受け取るための関数を`ImageListViewController.swift`に記述する。
+
+```
+final class ImageListViewController: UIViewController {
+    ...
+    private var imagesTask: Task<Void, Never>?
+    ...
+    deinit {
+        ...
+        errorsTask?.cancel()
+    }
+}
+
+private extension ImageListViewController {
+    func setupBindings() {
+        ...
+        errorsTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await error in viewModel.errorsSubject {
+                self.handleGeneralError(error)
+            }
+        }
+    }
+}
+...
+```
+
+- 試しにWIFIを切って、ネットワークがない状態を作り出してみてください。完成イメージのようなポップアップが表示されたかと思います。
 
 ### 各技術の説明
 **UIAlertController**
