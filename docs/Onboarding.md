@@ -2312,6 +2312,100 @@ private extension ImageListViewController {
 
 - 試しにWIFIを切って、ネットワークがない状態を作り出してみてください。完成イメージのようなポップアップが表示されたかと思います。
 
+**エラーの細分化**
+- 次に、エラーによって表示を変えるために、エラーを細分化するためのモデルを作成していきます。
+- Swiftのエラーハンドリングでは、起こりうるエラーをenumで分類し、各Error送出場所に割り当てるといった方法がよく用いられます。
+1. `Domain/Models`に`ErrorsDTO.swift`, `ErrorsModel.swift`を作成し、それぞれ以下を記述する。
+
+```
+// ErrorsDTO.swift
+
+enum NetworkError {
+    case noInternetConnection
+    case timeout
+    case others(Error)
+}
+
+struct ServerError {
+    let statusCode: Int
+    let message: String
+}
+
+enum ErrorType {
+    case general
+    case network(NetworkError)
+    case server(ServerError)
+    case storage(String)
+}
+
+struct ErrorsDTO: Error {
+    var type: ErrorType
+}
+
+extension ErrorsDTO {
+    func toModel() -> ErrorsModel {
+        .init(type: type)
+    }
+}
+
+```
+
+- ErrorTypeに注目してください。現時点で起こりうるエラーは、インターネットの接続エラー、UnsplashAPIやFirebaseによるサーバーエラー、Realmによるストレージエラー、Swiftの内部エラーの4通りに大分できます。
+- さらに、NetworkErrorはインターネット無接続、タイムアウトに分けられます。
+  - このように、考えうるエラーを全て洗い出し、enumにしていきます。
+
+```
+struct ErrorsModel: Error {
+    var type: ErrorType
+}
+
+extension ErrorsModel {
+    var title: String {
+        switch type {
+            case .general:
+                return "Unknown error occured"
+            case .network(let networkError):
+                switch networkError {
+                    case .noInternetConnection:
+                        return "Connection failed"
+                    case .timeout:
+                        return "Connection time out"
+                    case .others(let error):
+                        return "Network error occured"
+                }
+            case .server:
+                return "Server error occured"
+            case .storage:
+                return "Storage operation failed"
+        }
+    }
+
+    var description: String {
+        switch type {
+            case .general:
+                return "please retry after a while."
+            case .network(let networkError):
+                switch networkError {
+                    case .noInternetConnection:
+                        return "there is no internet connection"
+                    case .timeout:
+                        return "the request is timed out"
+                    case .others(let error):
+                        return error.localizedDescription
+                }
+            case .server(let serverError):
+                return serverError.message
+            case .storage(let description):
+                return description
+        }
+    }
+}
+```
+
+- ここでは、Alertに表示する文章を分類しています。
+
+**定義したエラーを元に、既存のエラーハンドリングを書き換える**
+
 ### 各技術の説明
 **UIAlertController**
 - アラートを表示するためのViewController。ViewControllerと同じく、`present()`によって呼び出す。
