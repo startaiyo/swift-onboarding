@@ -2288,7 +2288,7 @@ extension ImageListViewModel: ImageListViewModelInput {
 ```
 final class ImageListViewController: UIViewController {
     ...
-    private var imagesTask: Task<Void, Never>?
+    private var errorsTask: Task<Void, Never>?
     ...
     deinit {
         ...
@@ -2405,6 +2405,220 @@ extension ErrorsModel {
 - ここでは、Alertに表示する文章を分類しています。
 
 **定義したエラーを元に、既存のエラーハンドリングを書き換える**
+1. `ApiClient`にErrorsModelの定義をマッピングする。
+
+```
+// ApiClientProtocol.swift
+protocol ApiClientProtocol {
+    func call<T: CommonRequest>(request: T,
+                                completionHandler: @escaping (Result<Data, ErrorsDTO>) -> Void) // <-- 変更
+}
+```
+
+```
+// ApiClient.swift
+extension ApiClient: ApiClientProtocol {
+    func call<T: CommonRequest>(request: T,
+                                completionHandler: @escaping (Result<Data, ErrorsDTO>) -> Void) { // <-- 変更
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error as? URLError { // <-- URLErrorにキャストできる場合は、networkエラー。
+                completionHandler(.failure(convertToDTO(error)))
+                return
+            } else if error != nil {
+                completionHandler(.failure(.init(type: .general)))
+            }
+
+            guard let data,
+                  let response = response as? HTTPURLResponse else {
+                completionHandler(.failure(.init(type: .general))) // <-- HTTPURLResponseにキャストできない場合は、generalエラー。
+                return
+            }
+
+            if response.statusCode == 200 {
+                completionHandler(.success(data))
+            } else {
+                completionHandler(.failure(.init(type: .server(.init(statusCode: response.statusCode,
+                                                                     message: String(data: data,
+                                                                                     encoding: .utf8) ?? "")))))　// <-- statusCodeに応じて、サーバーエラーを送出。
+            }
+
+        }
+        ...
+    }
+}
+
+private extension ApiClient {
+    ...
+    func convertToDTO(_ error: URLError) -> ErrorsDTO {
+        switch error.code {
+            case .notConnectedToInternet,
+                    .networkConnectionLost:
+                return .init(type: .network(.noInternetConnection))
+            case .timedOut:
+                return .init(type: .network(.timeout))
+            default:
+                return .init(type: .network(.others(error)))
+        }
+    }
+}
+```
+
+2. `ImageNetworkService`, `ImageStorageService`を新しい`ErrorsModel`を使った形に書き換える。
+
+```
+// ImageNetworkService.swift
+protocol ImageNetworkService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result<[ImageInfoDTO], ErrorsDTO>) -> Void) // <-- 変更
+}
+
+```
+
+```
+// DefaultImageNetworkService.swift
+
+extension DefaultImageNetworkService: ImageNetworkService {
+    // MARK: Images
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result<[ImageInfoDTO], ErrorsDTO>) -> Void) { // <-- 変更
+        apiClient.call(request: ImageRequest(input: input)) { result in
+            switch result {
+                case .success(let data):
+                    do {
+                        let decodedData = try JSONDecoder().decode(ServerResponseDTOForImage.self,
+                                                                   from: data)
+                        completionHandler(.success(decodedData.results))
+                    } catch {
+                        print("Failed to decode to ImageDTO")
+                        completionHandler(.failure(.init(type: .general))) // <-- 変更
+                    }
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+```
+
+```
+// ImageStorageService.swift
+protocol ImageStorageService {
+    ...
+    func deleteAllImages(completionHandler: @escaping (Result<Void, ErrorsDTO>) -> Void) // <-- Result型を返すように変更
+}
+
+```
+
+```
+// DefaultImageStorageService.swift
+
+extension DefaultImageStorageService: ImageStorageService {
+    // MARK: Images
+    func deleteAllImages(completionHandler: @escaping (Result<Void, ErrorsDTO>) -> Void) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.realm.safeWrite {
+                    let objectsToDelete = self.realm.objects(ImageObject.self)
+                    self.realm.delete(objectsToDelete)
+                }
+                completionHandler(.success(Void()))
+            } catch {
+                completionHandler(.failure(.init(type: .storage(error.localizedDescription))))
+            }
+        }
+    }
+}
+```
+
+3. `ImageAppService`を新しい`ErrorsModel`を使った形に書き換える。
+
+```
+// ImageAppService.swift
+
+protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
+                   completionHandler: @escaping (Result<[ImageModel], ErrorsModel>) -> Void) // <-- 変更
+    func getAllImages(completionHandler: @escaping (Result<[ImageModel], ErrorsModel>) -> Void) // <-- 変更
+}
+
+```
+
+```
+// DefaultImageAppService.swift
+
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -> Void,
+                   completionHandler: @escaping (Result<[ImageModel], ErrorsModel>) -> Void) { // <-- 変更
+        storageService.getImages { cachedImages in
+            cacheCompletionHandler(cachedImages.map { $0.toModel() })
+        }
+        networkService.getImages(input) { [weak self] result in
+            switch result {
+                case .success(let images):
+                    self?.storageService.deleteAllImages { result in
+                        switch result {
+                            case .success:
+                                self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                                   title: $0.title,
+                                                                                   imageURLString: $0.urls.raw,
+                                                                                   createdAt: $0.createdAt) })
+                            case .failure(let error):
+                                completionHandler(.failure(error.toModel())) // <-- 変更
+                        }
+                    }
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt < $1.createdAt }))
+                case .failure(let error):
+                    completionHandler(.failure(error.toModel())) // <-- 変更
+                    self?.storageService.getImages { cacheImages in
+                        completionHandler(.success(cacheImages.map { $0.toModel() }))
+                    }
+            }
+        }
+    }
+    ...
+    func getAllImages(completionHandler: @escaping (Result<[ImageModel], ErrorsModel>) -> Void) { // <-- 変更
+        firebaseAppService.readAll(from: CollectionName.images,
+                                   type: ImageDTO.self) { result in
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(.init(type: .server(.init(statusCode: 500,
+                                                                         message: error.localizedDescription))))) // <-- 変更
+            }
+        }
+    }
+}
+```
+
+4. `handleGeneralError()`を、`ErrorsModel`を使った形に書き換える。
+
+```
+// ViewController+Extras.swift
+import UIKit
+
+extension UIViewController {
+    func handleGeneralError(_ error: ErrorsModel, // <-- 変更
+                            onDismissHandler: (() -> Void)? = nil) {
+        let alert = UIAlertController(title: error.title, // <-- 変更
+                                      message: error.description, // <-- 変更
+                                      preferredStyle: .alert)
+        alert.addAction(.init(title: "OK",
+                              style: .default) {_ in
+            onDismissHandler?()
+        })
+        self.present(alert,
+                     animated: true)
+    }
+}
+```
+
+- これで、何のエラーかがわかりやすくなりました。
+
+<img src ="images/image_7_2.png" width = "300">
 
 ### 各技術の説明
 **UIAlertController**
