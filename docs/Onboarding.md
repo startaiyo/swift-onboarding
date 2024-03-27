@@ -2625,4 +2625,82 @@ extension UIViewController {
 - アラートを表示するためのViewController。ViewControllerと同じく、`present()`によって呼び出す。
 - ボタンを押した際に行う処理は、`UIAlertAction`内に記述する。
 
-### 各技術の理解
+## 第八章 チャット画面を作ってみる
+
+### 概要
+画像をシェアするためのチャット画面を、SwiftUIを使って作っていきます。
+
+### 本章で学ぶこと
+- SwiftUI
+
+### 完成イメージ
+
+
+### 手順
+**チャット画面まで遷移できるようにする**
+- SwiftUIとは、SwiftでApple OSのアプリを作成する際に用いられる2種類のフレームワークのうち、よりモダンで利便性の高いものです。
+- まずは、SwiftUIでの画面の作り方を簡単に学び、UIKitで書かれた画面から遷移するコードを記述します。
+1. `Presentation`ディレクトリに`ChatScene`ディレクトリを新たに追加し、`ChatCoordinator.swift`, さらに`Views`ディレクトリを作成しその配下に`ChatView.swift`を作成、それぞれに以下を記述する。
+
+```
+// ChatCoordinator.swift
+import SwiftUI
+
+final class ChatCoordinator {
+    // MARK: Private properties
+    private let navigationController: UINavigationController
+
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
+    }
+
+    func start() {
+        let view = UIHostingController(rootView: ChatView())
+        view.navigationItem.title = "Chat"
+        navigationController.pushViewController(view,
+                                                animated: true)
+    }
+}
+```
+
+```
+// ChatView.swift
+import SwiftUI
+
+struct ChatView: View {
+    var body: some View {
+        Text("Chat View")
+    }
+}
+```
+- これで画面の真ん中に`Chat View`と書かれた画面が出来上がります。このようにSwiftUIはより宣言的にViewを作ることができます。詳しくは後述。
+
+2. `BaseTabCoordinator.swift`を以下に修正。
+
+```
+final class BaseTabCoordinator {
+    ...
+    private lazy var chatNavigationController: UINavigationController = {
+        let navigationController = UINavigationController()
+        setupNavigationViewController(navigationController)
+        navigationController.tabBarItem.title = "Chat"
+        navigationController.tabBarItem.image = UIImage(systemName: "person.2.fill")
+        return navigationController
+    }()
+
+    private lazy var chatCoordinator: ChatCoordinator = {
+        let coordinator = ChatCoordinator(navigationController: chatNavigationController)
+        return coordinator
+    }()
+    ...
+    func start() {
+        let viewControllers = [imageListNavigationController, chatNavigationController] // <-- 変更
+        rootViewController = BaseTabViewController.initialize(navigationControllers: viewControllers)
+        window.rootViewController = rootViewController
+        imageListCoordinator.start()
+        chatCoordinator.start() // <-- 追加
+    }
+}
+```
+
+- こうして、`Chat View`と書かれたViewが生成されたと思います。
