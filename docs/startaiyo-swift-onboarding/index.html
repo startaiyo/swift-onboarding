@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
   <meta name="theme-color" content="#4F7DC9">
   <meta charset="UTF-8">
-  <title>はじめに</title>
+  <title>Swift Onboarding Project</title>
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
   <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
@@ -23,13 +23,2725 @@
   <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
   <google-codelab codelab-gaid="Google Analytics ID"
                   id="startaiyo-swift-onboarding"
-                  title="はじめに"
+                  title="Swift Onboarding Project"
                   environment="web"
                   feedback-link="https://github.com/startaiyo/swift-onboarding">
     
-      <google-codelab-step label="概要" duration="0">
-        <ul>
-<li>これはSwift初学者にswiftのアプリ作成を通じて大まかな知識を学んでもらうのが目的です</li>
+      <google-codelab-step label="はじめに" duration="0">
+        <h2 is-upgraded>本オンボーディングの目的</h2>
+<ul>
+<li>簡単なアプリの作成を通じて、Swiftの基本を学び、配属先での業務に活かす。</li>
+<li><a href="https://medium.com/@andres.carort/ios-developer-roadmap-2023-330fd5cb7479" target="_blank">Swiftのロードマップ</a>に基づき、Swiftの網羅的な知識を実装レベルにまで持っていってもらう。</li>
+</ul>
+<h2 is-upgraded>学習内容</h2>
+<ol type="1">
+<li>ログイン画面を表示する。</li>
+<li>メイン画面にデータを表示する。 </li>
+<li>メイン画面へ移動可能にする。</li>
+<li>APIを叩いてデータを取得する。 </li>
+<li>データを保存する。</li>
+<li>取得したデータをリアルタイムで更新する。</li>
+<li>エラーを表示する </li>
+<li>チャット画面を作ってみる </li>
+<li>ログイン機能を作る。</li>
+</ol>
+<h2 is-upgraded>必要な準備</h2>
+<ul>
+<li><a href="https://developer.apple.com/xcode/" target="_blank">Xcode</a> *必須 <ul>
+<li>Versionは15.2</li>
+</ul>
+</li>
+<li>Apple Developerアカウント</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第一章 ログイン画面を表示する" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ダミーのログイン画面の作成を通じて、アプリ全体に関わる処理に関する知識を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate" target="_blank">AppDelegate</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uiscenedelegate" target="_blank">SceneDelegate</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uistoryboard" target="_blank">storyboard</a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/AutolayoutPG/index.html" target="_blank">AutoLayout</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p>iPhone</p>
+</td><td colspan="1" rowspan="1"><p>iPad</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p class="image-container"><img alt="Alt text" src="img/ace8895bc9cd3911.png"></p>
+</td><td colspan="1" rowspan="1"><p class="image-container"><img alt="Alt text" src="img/fcb80c67476018e5.png"></p>
+</td></tr>
+</table>
+<h2 is-upgraded>手順</h2>
+<p><strong>Xcodeのプロジェクトを作る</strong></p>
+<ol type="1">
+<li>Xcodeを開き、Create a new Xcode projectを選ぶ。</li>
+<li>iOS &gt; Appを選ぶ<br><img style="width: 350.00px" src="img/a3d0d34db85b9a38.png"></li>
+<li>任意の名前をつけ、プロジェクトを保存する。</li>
+</ol>
+<p><strong>GitHubのリポジトリを作る</strong></p>
+<ol type="1">
+<li>Source control navigator &gt; Repositories &gt; Remotes(画像参照)を右クリック<br><img style="width: 400.00px" src="img/e4e7f5352ba38890.png"></li>
+<li>New &#34;App名&#34; Remote...をクリックし、自分のGitHubアカウント情報を入力する。</li>
+<li>Personal access tokenについては、<a href="https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank">こちら</a> を参考にし、前手順で指定されたscopeを持ったPersonal access tokenを発行し、登録する。</li>
+</ol>
+<p>以上でGitHubとの連携は完了です。</p>
+<p><strong>画面表示のための下準備</strong></p>
+<ol type="1">
+<li>info.plistというファイルを開き、<code>Information Property List</code>内にある<code>Application Scene Manifest</code>をマイナスボタンで削除する。</li>
+<li>SceneDelegate.swiftを物理削除する。</li>
+<li>AppDelegateから以下の二つの関数を削除する。</li>
+</ol>
+<pre><code>func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -&gt; UISceneConfiguration {
+    // Called when a new scene session is being created.
+    // Use this method to select a configuration to create the new scene with.
+    return UISceneConfiguration(name: &#34;Default Configuration&#34;, sessionRole: connectingSceneSession.role)
+}
+
+func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set&lt;UISceneSession&gt;) {
+    // Called when the user discards a scene session.
+    // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
+    // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
+}
+</code></pre>
+<ol type="1" start="4">
+<li>AppDelegateクラス定義内に以下変数を追加する。</li>
+</ol>
+<pre><code>var window: UIWindow?
+</code></pre>
+<ul>
+<li>?(オプショナル型)については後述</li>
+</ul>
+<ol type="1" start="5">
+<li>Main.storyboard, ViewControllerを削除する。</li>
+<li>図のようにAppの設定 &gt; TARGETSのApp名 &gt; Info &gt; Main storyboard file base name を削除する(写真は削除した後。)</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/e1ec1b13845806d0.png"></p>
+<ol type="1" start="7">
+<li>AppDelegateの<code>func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool</code> 内に</li>
+</ol>
+<pre><code>window = UIWindow(frame: UIScreen.main.bounds)
+let storyBoard = UIStoryboard(name: &#34;Login&#34;, bundle: nil)
+let loginVC = storyBoard.instantiateViewController(withIdentifier: &#34;LoginViewController&#34;)
+window?.rootViewController = loginVC
+window?.makeKeyAndVisible()
+</code></pre>
+<p>を追加します。※このままでは動きません。 次に、ログイン画面を作っていきます。</p>
+<p><strong>ログイン画面の表示</strong></p>
+<ol type="1">
+<li>AppDelegateが含まれているApp名のディレクトリで右クリックし、New Groupを選択すると、新たなディレクトリが作れる。名前は&#34;Presentation&#34;(画面表示に関わるファイルを格納するディレクトリ)にする。</li>
+<li>Presentationディレクトリの下に、ログイン画面に関わるファイルを格納する&#34;LoginScene&#34;ディレクトリを作成する。</li>
+<li>Loginディレクトリで右クリックし、New Fileを選択 &gt; iOS &gt; User Interfaceにある&#34;Storyboard&#34;を選択。名前は&#34;Login&#34;にし、保存。</li>
+</ol>
+<ul>
+<li>すると、下記のような白地のiPhoneが出てくると思います。ここにパーツを置き、画面を完成させます。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/f3cd95cde10e7e1a.png"></p>
+<ol type="1" start="4">
+<li>LoginディレクトリでさらにNew File &gt; iOS &gt; SourceのSwift Fileを選択し、名前を<code>LoginViewController</code>にする。</li>
+<li>そして、デフォルトで存在する<code>import foundation</code>を削除したのちに以下のコードを記述し、LoginViewControllerクラスを作成する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class LoginViewController: UIViewController {}
+</code></pre>
+<ul>
+<li>これがコードとstoryboardを橋渡ししてくれます。</li>
+</ul>
+<ol type="1" start="6">
+<li>再びLogin.storyboardに戻り、左側のDocument Outlineの赤枠で囲ったView Controllerをクリック &gt; 右側のInspectorsの赤枠で囲ったCustom Class &gt; ClassからLoginViewControllerを選択。そして同じく赤枠のIdentity &gt; Storyboard IDにも同様に<code>LoginViewController</code>を入力。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/858e32bf1520242d.png"></p>
+<ul>
+<li>これでコード上から参照できるようになりました。</li>
+</ul>
+<ol type="1" start="7">
+<li>右上の赤枠で囲った&#34;➕&#34;ボタン(以下、library)をクリックすると画面に配置できるパーツ一覧が出てくる。まず&#34;Label&#34;をクリックしたまま離さず、白地のiPhoneの上でクリックを離すと、Labelと書かれたパーツが画面上に配置される。</li>
+</ol>
+<p class="image-container"><img style="width: 400.00px" src="img/8f5f3d90ac17e47.png"></p>
+<ol type="1" start="8">
+<li>ここで試しにXcode左上の再生ボタンを押してビルドしてみると、Labelと書かれた画面が出現する。</li>
+</ol>
+<p class="image-container"><img style="width: 200.00px" src="img/88dfa845e8d8a70d.png"></p>
+<ul>
+<li>これで画面表示まではされるようになりました。次に色々なパーツを組み合わせ、ログイン画面を作成していきます。</li>
+</ul>
+<p><strong>ログイン画面の作成</strong></p>
+<ol type="1">
+<li>libraryをクリックし、TextFieldを二つ、Buttonを一つ、先ほどのLabelの下に順に配置する。</li>
+</ol>
+<p class="image-container"><img style="width: 200.00px" src="img/8e86f82c3dd5d4ed.png"></p>
+<ul>
+<li>基本的に、storyboardはパーツが平面上のどこにあるのかを指定するだけで、ここでは見た目的な部分に修正は加えません。見た目はViewControllerから整えていきます。</li>
+</ul>
+<ol type="1" start="2">
+<li>Add Editor on Right(libraryの+ボタンの下、赤枠)によりxcodeの編集画面を2画面にし、片方のEditorをクリックした後LoginViewController.swiftファイルを開く。</li>
+<li>もう片方で開いているLogin.storyboard(開いてなければ開く)のLabelを、controlキーを押したままクリック離さずにLoginViewController.swiftファイル上ドラッグすると、図のように青い線と共に<code>Insert Outlet or Outlet Collection</code>と出てくる。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/2f93ef60aa144795.png"></p>
+<p>このタイミングでクリックを離し、StorageをStrongにし、nameを<code>titleLabel</code>にすると、自動的に</p>
+<pre><code>@IBOutlet var titleLabel: UILabel!
+</code></pre>
+<p>というコードが出現する。しかしこのインスタンスはクラス内からしか参照しないため、<code>@IBOutlet</code>と<code>var</code>の間に<code>private</code>を記述することでそれを明示する。 4. 同様に、上から順にprivateの@IBOutletプロパティである<code>emailField</code>, <code>passwordField</code>, <code>loginButton</code>を作成すると、<code>LoginViewController.swift</code>は以下のようなコードになる。</p>
+<pre><code>import UIKit
+
+final class LoginViewController: UIViewController {
+    @IBOutlet private var titleLabel: UILabel!
+    @IBOutlet private var emailField: UITextField!
+    @IBOutlet private var passwordField: UITextField!
+    @IBOutlet private var loginButton: UIButton!
+}
+</code></pre>
+<ol type="1" start="5">
+<li>各パーツのデザインを作る。まず、titleLabelのテキストを&#34;Login&#34;にしたいので、<code>titleLabel: UILabel!</code>のすぐ横から以下のコードを記述する。</li>
+</ol>
+<pre><code>@IBOutlet private var titleLabel: UILabel! {
+    didSet {
+        titleLabel.text = &#34;Login&#34;
+    }
+}
+</code></pre>
+<ul>
+<li>これで、LoginViewController上でtitleLabelがインスタンス化された(Setされた)際、titleLabelのtextが&#34;Login&#34;になることを示している。</li>
+</ul>
+<ol type="1" start="6">
+<li>同様に、各パーツの<code>didSet</code>内に下記を記述する。</li>
+</ol>
+<pre><code>// emailField内
+emailField.placeholder = &#34;email&#34;
+
+// passwordField内
+passwordField.placeholder = &#34;password&#34;
+
+// loginButton内
+loginButton.setTitle(&#34;Login&#34;,
+                                 for: .normal)
+</code></pre>
+<p><strong>各パーツの位置調整</strong></p>
+<ul>
+<li>以上の配置は、様々な画面の大きさがあるiOSに対して柔軟性に欠ける。例えば、iPad上に表示しようとした際には以下のようになってしまう。そのため、以下のAutoLayoutの設定を行うことにより、相対的な配置に変える必要がある。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/34e2d5538e20b52f.png"></p>
+<ol type="1">
+<li>まず、以下の手順ですべてのパーツを水平方向の中心に持っていきたい。Title Labelに対して、先程のようにcontrolボタンを押しながらドラッグして出てくる青いポインターを、上部のViewにまでドラッグすると、下図のような黒いポップアップが出てくる。これの&#34;Center Horizontally&#34;をクリックすると、CenterX(水平方向の中心に位置する)の制約(Constraint)が付与される。</li>
+</ol>
+<ul>
+<li>これはすなわち、View(画面全体)に対して、titleLabelは水平方向の中心に配置してください、という制限を我々がかけたことになる。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/175c06e5da3dbbec.png"></p>
+<ol type="1" start="2">
+<li>他のパーツについても同様にCenterXのConstraintをViewに対して付与する。</li>
+<li>続いて、以下の手順で全てのパーツをY軸方向に50ずつ離して配置する。まず、PasswordFieldにViewに対してCenter VerticallyのConstraintを付与する。</li>
+<li>3.で付与されたConstraintをクリックすると、図のようにConstraintの詳細を設定できる部分が開くので、こちらのConstantに25を入力する。</li>
+</ol>
+<p class="image-container"><img style="width: 500.00px" src="img/82cc916360ee562f.png"></p>
+<ol type="1" start="5">
+<li>emailFieldから今度はpasswordFieldに対して、&#34;vertical spacing&#34;のconstraintを付与する。4.同様に付与されたConstraintを開き、Constantを50に設定する。</li>
+<li>同様にtitleLabelからemailField, loginbuttonからpasswordFieldに対してconstantが50のvertical spacingを付与する。</li>
+<li>テキストフィールドの幅が少し狭いので、emailField, passwordFieldそれぞれに対し、widthのconstantが220のconstraintを設定する。</li>
+</ol>
+<ul>
+<li>以上により、画面の大きさに関わらず、違和感のない配置にする事ができる。</li>
+</ul>
+<p class="image-container"><img style="width: 500.00px" src="img/5bbfd2fa5d665fa1.png"></p>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>AppDelegate.swift</strong></p>
+<ul>
+<li>アプリ全体の変化に関わるイベントを処理するクラス。</li>
+<li>アプリ全体の起動/停止に伴って実行される<code>didFinishLaunchingWithOptions</code>, <code>applicationWillTerminate</code> だけでなく、画面に関わるライフサイクルイベントもSceneDelegate同様、処理できる。<br> どのようなイベントがあるのか詳細は<a href="https://dena0.atlassian.net/wiki/spaces/SPD/pages/657044762/App+States" target="_blank">App States</a>を参照してください。</li>
+<li>例えば、アプリを開いた際に画面ロックするかsessionの状態によって決めるメソッドを呼び出すなどで使われる。</li>
+<li>※Delegate(委譲)とは、自分と異なるクラスに何か処理をさせること。このAppDelegateは、アプリの中心であるUIApplicationのインスタンスがAppDelegateというクラスに上記の処理をDelegateしていると言える。</li>
+</ul>
+<p><strong>SceneDelegate.swift</strong></p>
+<ul>
+<li>2画面表示などにより複数のViewインスタンスが必要になったため、それぞれのViewの状態を管理するためのクラス。</li>
+<li>担っている処理はAppDelegateのアプリライフサイクルに対する処理と同様。</li>
+</ul>
+<p><strong>UIWindow</strong></p>
+<ul>
+<li>アプリの画面を表すクラス。</li>
+<li>このクラスのインスタンスにより画面上にパーツが配置され、またこれが画面上で起こるイベントを受け取る。</li>
+</ul>
+<p><strong>オプショナル型</strong></p>
+<ul>
+<li>変数定義の際、クラス名の末尾に?をつけると、その変数がnil許容であることを示す。その状態ではその変数はラップされており、内部の値を使うためには以下のいずれかの方法でアンラップしてあげなくてはならない。</li>
+</ul>
+<ol type="1">
+<li><code>if let</code>構文</li>
+</ol>
+<pre><code>var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// varAがnilじゃない時のみ、アンラップしたvarAと共に{}内の処理を実行する。
+if let varA {
+    print(varA) // 出力: ClassA(...)
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>guard let</code>構文</li>
+</ol>
+<pre><code>var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// guardはその条件がtrueの場合のみ、その下の行に続く処理を継続できる構文。falseならelse以下の処理をすることになるため、ここではnilの場合にelseに行くことになる。
+guard let varA else { // nilの場合の処理 }
+print(varA) // 出力: ClassA(...)
+</code></pre>
+<ol type="1" start="3">
+<li>フォースアンラップ(強制アンラップ)法(非推奨)</li>
+</ol>
+<pre><code>var varA: ClassA?
+varA = ClassA()
+print(varA) // 出力: Optional(ClassA(...))
+// !マークをつけるだけ。しかし、nilだとクラッシュするため、必ずアンラップできる事が保証できない場合、非推奨。
+print(varA!) // 出力: ClassA(...)
+</code></pre>
+<p><strong>storyboard</strong></p>
+<ul>
+<li>UI上でパーツを並べて画面を作るツール。</li>
+<li>中身はxibファイル(xmlで部品のレイアウトを記述したもの)となっており、この形でXcode上で認識される。</li>
+<li>Swiftでは大きく分けてUIKit, SwiftUIの2種類のiPhoneアプリ作成用フレームワークがあり、こちらはそのうち前者で多用される。</li>
+</ul>
+<p><strong>AutoLayout</strong></p>
+<ul>
+<li>上下左右の4方向に大きさ・長さの制約をかけることで、各パーツのサイズをあらゆる画面の大きさに対応できるようにした方法。</li>
+<li>いろんな種類の制約のかけ方がある。詳しくは<a href="https://dena0.atlassian.net/wiki/spaces/SPD/pages/657492482/Storyboard+XIB" target="_blank">こちら</a>。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+<p><strong>AppDelegate</strong></p>
+<p>AppDelegateの中に以下のコードを書き、コントロールセンターを開く→閉じる→アプリをバックグラウンドに入れる(注: アプリを終了させないこと)→戻る とすると、active→inactive→active→inactive→background→(inactive)→activeと呼ばれる事がわかる。 ライフサイクルが<a href="https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle" target="_blank">このようになっており</a>、各遷移に伴ってAppDelegateの関数が呼ばれるためである。</p>
+<pre><code>// Inactive→Active
+func applicationDidBecomeActive(_ application: UIApplication) {
+    print(&#34;become active&#34;)
+}
+
+// Inactive→Background
+func applicationDidEnterBackground(_ application: UIApplication) {
+    print(&#34;enter background&#34;)
+}
+
+// Inactive→Background
+func applicationWillResignActive(_ application: UIApplication) {
+    print(&#34;become inactive&#34;)
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第二章 メイン画面にデータを表示する。" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>メイン画面およびそこに表示するデータを作成し、MVVMパターンというデータ表示とデータ作成部分を分割するアーキテクチャを学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://cocoacasts.com/model-view-viewmodel-in-swift" target="_blank">MVVMアーキテクチャ</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uicollectionview" target="_blank">CollectionView</a><a href="https://developer.apple.com/documentation/uikit/uitableview" target="_blank">(TableView)</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/views_and_controls/table_views/configuring_the_cells_for_your_table" target="_blank">CustomCell</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uicollectionviewdiffabledatasource" target="_blank">DiffableDataSource</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/97ca0c9a23de328e.png"></p>
+<h2 is-upgraded>手順</h2>
+<p><strong>メイン画面作成</strong></p>
+<ul>
+<li>まずは一章と同様の手順により、メイン画面である画像リスト画面ディレクトリ(ImageListScene)を作成していく。</li>
+</ul>
+<ol type="1">
+<li>ImageList.storyboardを作成し、&#34;+&#34;ボタンで<code>Collection View</code>を選択、画面いっぱいに広げ、SafeAreaに四方を合わせたConstraintを設定してください。<br><img alt="alt text" src="img/9e8efe7f1ab95d99.png"></li>
+<li><code>ImageListViewController.swift</code>を作成し、以下のコードを記述してください。</li>
+</ol>
+<pre><code>import UIKit
+
+final class ImageListViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>imageCollectionView</code>という名前で先ほど追加したcollection viewをIBOutlet接続し、storyboard IDに<code>ImageListViewController</code>を入力する。</li>
+<li><code>AppDelegate</code>で最初の画面を一旦上記ImageViewControllerに置き換える。</li>
+</ol>
+<ul>
+<li><code>didFinishLaunchingWithOptions</code>内を以下に書き換えてください。</li>
+</ul>
+<pre><code>window = UIWindow(frame: UIScreen.main.bounds)
+window?.makeKeyAndVisible()
+let storyboard = UIStoryboard(name: &#34;ImageList&#34;,
+                                bundle: nil)
+if let viewController = storyboard.instantiateViewController(withIdentifier: &#34;ImageListViewController&#34;) as? ImageListViewController {
+    window?.rootViewController = viewController
+}
+
+return true
+</code></pre>
+<p><strong>CollectionViewにデータを表示する</strong></p>
+<ul>
+<li>このままではまだ白い画面が映っているだけだと思います。以下の手順により、セルに表示するデータを作成します。</li>
+</ul>
+<ol type="1">
+<li><code>Views</code>、<code>ViewModels</code>、<code>ViewControllers</code>というフォルダを<code>ImageListScene</code>配下に作成し、<code>ViewControllers</code>の中に、上記で作成したstoryboardとViewControllerファイルを入れる。</li>
+</ol>
+<ul>
+<li>この<code>ViewModels</code>がデータとモデルをつなげる橋渡しをします。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>Views</code>配下で、ファイル作成時に<code>Empty</code>を選び、<code>ImageListCell</code>と入力し、xibファイルを作成する。上記で作成できたxibファイルに&#34;+&#34;から、CollectionViewに表示するセルである<code>Collection View Cell</code>を選び、適当な場所に配置する。そこへ<code>Image View</code>、<code>Label</code>を入れ、以下のようにConstraintを付加する。<code>Custom Class</code>の<code>Class</code>部分と<code>Collection Reusable View</code>の<code>Identifier</code>に<code>ImageListCell</code>を入力する。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/3f52a1b9cfd13.png"></p>
+<ol type="1" start="3">
+<li>同じく<code>Views</code>配下に、<code>ImageListCell.swift</code>を作成。以下コードを入力、IBOutletを作成する。</li>
+</ol>
+<ul>
+<li>UIの初期設定を行う<code>setupUI()</code>はImageListCellの中でしか使わない関数なので、private拡張の中に入れる。 <ul>
+<li>内部でしか使わない関数は必ずprivate拡張の中に入れる。そうすることで、関数が内部でしか使われていないことを明示でき、可読性が上がる。</li>
+</ul>
+</li>
+</ul>
+<pre><code>import UIKit
+
+final class ImageListCell: UICollectionViewCell {
+    // MARK: Private properties
+    @IBOutlet private var imageView: UIImageView! {
+        didSet {
+            imageView.contentMode = .scaleAspectFill
+        }
+    }
+    @IBOutlet private var titleLabel: UILabel! {
+        didSet {
+            titleLabel.textAlignment = .center
+        }
+    }
+
+    override func awakeFromNib() {
+        setupUI()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListCell {
+    func setupUI() {
+        backgroundColor = .lightGray
+        layer.cornerRadius = 10
+    }
+}
+</code></pre>
+<ol type="1" start="4">
+<li>表示するデータを定義する、<code>ImageModel</code>を作成する。</li>
+</ol>
+<ul>
+<li>ルート階層(<code>Presentation</code>と同じ階層)に<code>Domain</code>ディレクトリを作成する。</li>
+<li>その下に<code>Models</code>ディレクトリを作成。</li>
+<li><code>ImageModel.swift</code>を作成、以下を記述する。</li>
+</ul>
+<pre><code>typealias ImageID = String
+
+struct ImageModel {
+    let id: ImageID
+    let title: String
+    let imageURLString: String
+    let createdAt: String
+}
+</code></pre>
+<ul>
+<li>typealiasとは既存のクラスの組み合わせで新しいクラスを作成する際に用いられる。</li>
+</ul>
+<ol type="1" start="5">
+<li>いよいよデータ部分であるModelとViewを結合する、ViewModelを実装する。<code>ViewModels</code>配下に、<code>ImageListCell</code>のViewModelである、<code>ImageListCellViewModel.swift</code>と<code>ImageListView</code>のViewModelである<code>ImageListViewModel.swift</code>を作成する。</li>
+<li><code>ImageListCellViewModel.swift</code>に下記を記述する。</li>
+</ol>
+<pre><code>import Foundation
+
+protocol ImageListCellViewModelOutput {
+    var title: String { get }
+    var imageURLString: String { get }
+}
+
+typealias ImageListCellViewModelProtocol = ImageListCellViewModelOutput
+
+extension ImageListCellViewModel {
+    struct Input {
+        let title: String
+        let imageURLString: String
+    }
+}
+
+final class ImageListCellViewModel: Hashable {
+    // MARK: Private properties
+    let input: Input
+
+    init(input: Input) {
+        self.input = input
+    }
+}
+
+// MARK: - ImageListCellViewModelOutput
+extension ImageListCellViewModel: ImageListCellViewModelOutput {
+    var title: String {
+        return input.title
+    }
+
+    var imageURLString: String {
+        return input.imageURLString
+    }
+}
+</code></pre>
+<ul>
+<li><code>"ViewModelクラス名前"Output</code>はViewに影響を及ぼす関数・変数を、<code>"ViewModelクラス名前"Input</code>は逆にViewから影響を及ぼされ、ViewModel内への影響を及ぼす関数・変数を記述するプロトコルである。(後者は今回は出てこないが、また後ほど出てくる。)</li>
+<li><code>ViewModel</code>で定義される変数・インスタンスはInputという構造体を定義し、そこから依存性注入する。</li>
+</ul>
+<ol type="1" start="7">
+<li><code>ImageListViewModel.swift</code>に下記コードを記述する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] { get }
+}
+
+typealias ImageListViewModelProtocol = ImageListViewModelOutput
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private var data = [ImageListCellViewModel]()
+
+    init() {
+        fetchData()
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    func fetchData() {
+        var dummyData = [ImageModel]()
+        // ダミーデータ作成
+        for i in 0..&lt;12 {
+            dummyData.append(.init(id: &#34;\(i)&#34;,
+                                   title: &#34;title \(i)&#34;,
+                                   imageURLString: &#34;https://images.unsplash.com/5/unsplash-kitsune-4.jpg?ixlib=rb-0.3.5&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;s=bc01c83c3da0425e9baa6c7a9204af81&#34;, 
+                                   createdAt: &#34;2022-04-01&#34;))
+        }
+        data = dummyData.map { self.makeCellViewModel($0) }
+    }
+
+    func makeCellViewModel(_ model: ImageModel) -&gt; ImageListCellViewModel {
+        .init(input: .init(title: model.title,
+                           imageURLString: model.imageURLString,
+                           createdAt: model.createdAt))
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
+    }
+}
+</code></pre>
+<ul>
+<li>ダミーデータ作成部分は後ほど、APIをfetchする処理に書き換えます。</li>
+</ul>
+<ol type="1" start="8">
+<li>まずは<code>ImageListCellViewModel</code>と<code>ImageListCell</code>のデータを結合(binding)するため、<code>ImageListCell.swift</code>に下記コードを追加する。</li>
+</ol>
+<pre><code>final class ImageListCell: UICollectionViewCell {
+    // MARK: Public properties
+    var viewModel: ImageListCellViewModelProtocol! {
+        didSet {
+            setupBindings()
+        }
+    }
+    ...
+}
+
+// MARK: - Private functions
+private extension ImageListCell {
+    ...
+    func setupBindings() {
+        setImage()
+        titleLabel.text = viewModel.title
+    }
+
+    func setImage() {
+        imageView.image = UIImage(data: try! Data(contentsOf: URL(string: viewModel.imageURLString)!))
+    }
+}
+
+</code></pre>
+<ul>
+<li>これでviewModelのOutputのデータがViewに表示され(つまり、Viewに影響を及ぼし)ました。</li>
+</ul>
+<ol type="1" start="9">
+<li>UICollectionViewに表示するデータを扱うクラスである、<code>ImageListViewController+ImageDataSource.swift</code>を作成し、以下コードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class ImageDataSource: UICollectionViewDiffableDataSource&lt;Int, ImageListCellViewModel&gt; {
+    init(_ collectionView: UICollectionView) {
+        super.init(collectionView: collectionView) { collectionView, indexPath, viewModel in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: &#34;ImageListCell&#34;,
+                                                                for: indexPath) as? ImageListCell
+            else {
+                fatalError(&#34;Failed to dequeue cell with reuse identifier ImageListCell&#34;)
+            }
+            // cellにviewModelを設定する。
+            cell.viewModel = viewModel
+            return cell
+        }
+    }
+}
+
+// MARK: - Public functions
+extension ImageDataSource {
+    func apply(_ items: [ImageListCellViewModel]) {
+        var snapshot = NSDiffableDataSourceSnapshot&lt;Int, ImageListCellViewModel&gt;()
+        snapshot.appendSections([0])
+        snapshot.appendItems(items)
+
+        DispatchQueue.main.async {
+            self.apply(snapshot,
+                       animatingDifferences: false)
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>DiffableDataSourceとは、CollectionViewに表示するデータを、それぞれ一意のデータとしてその差分を取って追加・削除を行う方法。詳しくは<a href="https://qiita.com/startaiyo/items/61cdad04b53b1a740a90" target="_blank">こちら</a></li>
+<li>DispatchQueueとは、並列処理を行うキューを提供するクラス。</li>
+<li>ここで<code>ImageListCellViewModel</code>と<code>ImageListCell</code>が結合する。</li>
+</ul>
+<ol type="1" start="10">
+<li><code>ImageListViewController.swift</code>で下記コードを記述し、dataSource、データの結合(binding)を設定する。</li>
+</ol>
+<pre><code>final class ImageListViewController: UIViewController {
+    // MARK: Public properties
+    var viewModel: ImageListViewModel!
+
+    @IBOutlet private var imageCollectionView: UICollectionView! {
+        didSet {
+            // CollectionView, TableViewにカスタムセルを表示するために必須の処理。
+            imageCollectionView.register(UINib(nibName: &#34;ImageListCell&#34;,
+                                               bundle: nil),
+                                         forCellWithReuseIdentifier: &#34;ImageListCell&#34;)
+        }
+    }
+    private lazy var dataSource = ImageDataSource(imageCollectionView)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupBindings()
+    }
+}
+
+private extension ImageListViewController {
+    func setupBindings() {
+        dataSource.apply(viewModel.rows)
+    }
+}
+</code></pre>
+<ul>
+<li>これでデータが表示されるようになりましたが、CollectionViewのセルの見た目がかなりぐちゃぐちゃになっています。</li>
+</ul>
+<p><strong>CollectionViewの整形</strong></p>
+<ul>
+<li>これの見た目をいい感じにしていきます。そのためには、<code>UICollectionViewFlowLayout</code>を使用します。</li>
+</ul>
+<ol type="1">
+<li><code>ImageListViewController.swift</code>に以下変数定義を記述する。</li>
+</ol>
+<pre><code>final class ImageListViewController: UIViewController {
+    ...
+    private lazy var collectionViewLayout: UICollectionViewFlowLayout = {
+        let margin: CGFloat = 15
+        let spacing: CGFloat = 10
+        let itemHeight: CGFloat = 125
+        let screenWidth = UIScreen.main.bounds.width
+        let itemsPerRow: CGFloat = 3
+        let totalMargin = margin * 2
+        let totalSpacing = spacing * (itemsPerRow - 1)
+        let itemWidth: CGFloat = (screenWidth - totalMargin - totalSpacing) / itemsPerRow
+
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = spacing
+        layout.minimumInteritemSpacing = spacing
+        layout.itemSize = CGSize(width: itemWidth,
+                                 height: itemHeight)
+        layout.sectionInset = UIEdgeInsets(top: margin,
+                                           left: margin,
+                                           bottom: margin,
+                                           right: margin)
+        return layout
+    }()
+}
+</code></pre>
+<ol type="1" start="2">
+<li>1.をCollectionViewのdidSetに追記する。</li>
+</ol>
+<pre><code>@IBOutlet private var imageCollectionView: UICollectionView! {
+    didSet {
+        ...
+        imageCollectionView.collectionViewLayout = collectionViewLayout
+    }
+}
+</code></pre>
+<ul>
+<li>セルの大きさが決まり、完成図のようなセルになったと思います。</li>
+<li>紫色のワーニングがたくさん出てくるかと思われますが、一旦は放置しましょう。後ほど修正します。</li>
+</ul>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>CollectionView/TableView</strong></p>
+<ul>
+<li>前者は同じ構造の複数のデータを決まったレイアウトで一覧表示するのに使われ、後者は単一の列で複数のデータを表示するのに使われる。</li>
+<li>データの表示単位をセル(<code>UICollectionViewCell/UITableViewCell</code>)と呼び、後述のCustom Cellにレイアウトを作成する。 <ul>
+<li>例えば、今回のようにimageとtitleを表示するのであれば、Cellのファイル(.swift, .xibファイル両方)で表示単位であるtitleとimageがどのように表示されるのかを定義している。</li>
+<li>また、一度作成されたセルは画面上から消えた後、別のデータを表示するために再利用(reuse)される。セルから前に表示していたデータを消すために<code>prepareForReuse()</code>と呼ばれる関数をoverrideし、データを初期化するコードを記述する事が多い。(FIFOのキューにセルが次々に入っては出ていくイメージなので、セルの作成/再利用はdequeueとも呼ばれる。)</li>
+</ul>
+</li>
+<li>sectionという区切りで各itemをグループ化できる。</li>
+<li>データの表示にはDataSourceと呼ばれるものを用い、CollectionViewであれば<code>UICollectionViewDataSource</code>または<code>UICollectionViewDiffableDataSource</code>が用いられる。</li>
+<li>セルをタップした時に行う処理はdelegateクラスを継承し、定義する。CollectionViewであれば<code>UICollectionViewDelegate</code>が用いられる。</li>
+</ul>
+<p><strong>Custom Cell</strong></p>
+<ul>
+<li>自分でセルのレイアウトを決める時に作成する、標準の<code>UICollectionViewCell/UITableViewCell</code>を継承したクラス。</li>
+<li>多くの場合xibファイルと組み合わせて作成するが、その場合reuseIdentifierと呼ばれる、セルの作成/reuseの際に参照される一意の値を設定する必要がある。</li>
+<li>また、上記Custom CellをcollectionViewでdequeueするためには、collectionViewで上記セルを<code>register()</code>する必要がある。詳しくは<a href="https://developer.apple.com/documentation/uikit/uicollectionview/1618089-register" target="_blank">こちら</a>。</li>
+</ul>
+<p><strong>MVVMアーキテクチャ</strong></p>
+<ul>
+<li>Modelがデータを、Viewが表示を、そしてViewModelがModelの取得とそれによって生じた変化に対しViewへの反映を行うようにしたアーキテクチャ。</li>
+<li>ViewとViewへのデータ表示を単一のViewContrllerで行うよりもコード量が少なくなり複雑性が下がるため、可読性が上がるというメリットがある。</li>
+<li>ViewModel中でViewModelへの変化を起こすInput, ViewModelからViewに変化を及ぼすOutputに分けられる。</li>
+<li>ViewModelの状態をViewに反映できるように繋げることをBindingと呼ぶ。</li>
+</ul>
+<p><strong>DiffableDataSource</strong></p>
+<ul>
+<li>セルの表示を担うDataSourceのうち、差分の更新を改良したもの。<a href="https://qiita.com/startaiyo/items/61cdad04b53b1a740a90" target="_blank">こちら</a>に詳細を記述している。</li>
+<li>差分によって別々のセルとして扱うというその特性上、それぞれのセルがユニークでなければならず、セルのデータ表示に使われるViewModelはHashable(一意に定まる事が保証されたクラス)に基づいている必要がある。</li>
+</ul>
+<p><strong>DispatchQueue</strong></p>
+<ul>
+<li>通常、iOSでは一つのメインスレッドと複数のサブスレッドで処理が実行される。</li>
+<li>メインスレッドでは基本的にはUIに関する処理、サブスレッドではそれ以外の処理が非同期に実行される。</li>
+<li>DispatchQueueは処理をどのスレッドで行うのかを指定できる。時間のかかる処理を非同期で行うのに頻繁に用いられる。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+<p><strong>TableView</strong></p>
+<ul>
+<li>二つのdataSourceへの理解</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第三章 メイン画面へ移動可能にする" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://khanlou.com/2015/10/coordinators-redux/?ref=blog.personal-factory.com" target="_blank">Coordinator</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank">NavigationController</a></li>
+<li><a href="https://developer.apple.com/documentation/uikit/uitabbarcontroller" target="_blank">UITabBarController</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<h2 is-upgraded>手順</h2>
+<p><strong>Coordinatorの作成</strong></p>
+<ul>
+<li>まずログイン画面からメイン画面に遷移するためのCoordinatorを作成していきます。</li>
+</ul>
+<ol type="1">
+<li><code>LoginCoordinator.swift</code>を<code>LoginScene</code>ディレクトリに作成し、以下のコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class LoginCoordinator {
+    private let window: UIWindow
+    private let navigationController = UINavigationController()
+
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    func start() {
+        showLogin(in: navigationController)
+    }
+}
+</code></pre>
+<ul>
+<li>NavigationControllerとは、ViewControllerをスタックさせ表示させるためのViewControllerです。詳しくは後述。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>showLogin(in:)</code>はこのクラス内でしか実行しないため、以下のようにprivateメソッドとして上記コードの下に記述する。</li>
+</ol>
+<pre><code>// MARK: - Private Functions
+private extension LoginCoordinator {
+    func showLogin(in navigationController: UINavigationController) {
+        let storyboard = UIStoryboard(name: &#34;Login&#34;,
+                                      bundle: nil)
+        if let vc = storyboard.instantiateViewController(withIdentifier: &#34;LoginViewController&#34;) as? LoginViewController {
+            navigationController.setViewControllers([vc],
+                                                    animated: true)
+            window.rootViewController = navigationController
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li>立ち上がりの画面をログイン画面に戻すため、<code>AppDelegate</code>内の処理を書き換える。<code>didFinishLaunchingWithOptions</code>の中を以下に置き換え、クラス変数に<code>private var loginCoordinator: LoginCoordinator?</code>を追加する。</li>
+</ol>
+<pre><code>func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -&gt; Bool {
+    // 一つのスクリーンを表すインスタンス。Keyになっているものがユーザーのアクションを受け取る。
+    window = UIWindow(frame: UIScreen.main.bounds)
+    window?.makeKeyAndVisible()
+    showLoginScreen()
+
+    return true
+}
+</code></pre>
+<ol type="1" start="4">
+<li><code>AppDelegate</code>のprivate関数として、<code>showLoginScreen()</code>を定義する。</li>
+</ol>
+<pre><code>func showLoginScreen() {
+    if let window,
+        loginCoordinator == nil {
+        loginCoordinator = LoginCoordinator(window: window)
+        loginCoordinator?.start()
+    }
+}
+</code></pre>
+<ul>
+<li>これでCoordinatorがstartした際にLogin画面が立ち上がる、Coordinator基本パターンが出来上がりました。</li>
+</ul>
+<p><strong>メイン画面にCoordinateする</strong></p>
+<ul>
+<li>いよいよCoordinatorの最大の特徴である、画面間の遷移を実装していきます。</li>
+</ul>
+<ol type="1">
+<li><code>ImageListScene</code>に<code>ImageListCoordinator.swift</code>を作成し、以下のコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class ImageListCoordinator {
+    // MARK: Private properties
+    private let navigationController: UINavigationController
+
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
+    }
+
+    func start() {
+        showImageListScreen()
+    }
+}
+
+private extension ImageListCoordinator {
+    func showImageListScreen() {
+        let storyboard = UIStoryboard(name: &#34;ImageList&#34;,
+                                      bundle: nil)
+        if let viewController = storyboard.instantiateViewController(withIdentifier: &#34;ImageListViewController&#34;) as? ImageListViewController {
+            navigationController.pushViewController(viewController,
+                                                    animated: true)
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>しかしこのままではLogin画面でのログインボタン押下イベントをImageListCoordinatorで検知する事ができません。コード上で両者が繋がっていないためです。ここで登場するのが、Delegateメソッドです。<br><code>LoginCoordinator</code>に以下を記述します。</li>
+</ul>
+<pre><code>protocol LoginCoordinatorDelegate: AnyObject {
+    func goToMain()
+}
+
+final class LoginCoordinator {
+    ...
+    // MARK: Public properties
+    weak var delegate: LoginCoordinatorDelegate?
+    ...
+}
+
+private extension LoginCoordinator {
+    func showMain() {
+        delegate?.goToMain()
+    }
+}
+</code></pre>
+<ul>
+<li>showMainを呼ぶと、delegate先でgoToMainの処理が実行されるようになりました。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>AppDelegate</code>に下記を追記する。</li>
+</ol>
+<pre><code>...
+// MARK: - Private functions
+private extension AppDelegate {
+    func showLoginScreen() {
+        if let window,
+           loginCoordinator == nil {
+            loginCoordinator = LoginCoordinator(window: window)
+            loginCoordinator?.delegate = self // &lt;-- 追記
+            loginCoordinator?.start()
+        }
+    }
+
+    func showImageList() {
+        let imageListCoordinator = ImageListCoordinator(navigationController: navigationController)
+        imageListCoordinator.start()
+    }
+    ...
+}
+
+...
+// MARK: - LoginCoordinatorDelegate
+extension AppDelegate: LoginCoordinatorDelegate {
+    func goToMain() {
+        showImageList()
+    }
+}
+</code></pre>
+<ul>
+<li>これでLoginCoordinatorのdelegateにAppDelegateが入ることにより、LoginCoordinatorで<code>goToMain</code>が実行された場合、Delegate先である<code>AppDelegate</code>で<code>showImageList()</code>が実行されるようになりました。</li>
+</ul>
+<ol type="1" start="3">
+<li><code>LoginViewController</code>でボタンの処理を追記する。</li>
+</ol>
+<pre><code>protocol LoginViewControllerDelegate: AnyObject {
+    func LoginViewControllerDidRequestToShowMainScreen()
+}
+
+final class LoginViewController: UIViewController {
+    weak var delegate: LoginViewControllerDelegate?
+    ...
+    @IBOutlet private var loginButton: UIButton! {
+        didSet {
+            loginButton.setTitle(&#34;Login&#34;,
+                                 for: .normal)
+            loginButton.addAction(.init { [weak self] _ in
+                self?.delegate?.LoginViewControllerDidRequestToShowMainScreen()
+            },
+                                  for: .touchUpInside)
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="4">
+<li>最後に、<code>LoginViewController.swift</code>のDelegate処理を<code>LoginCoordinator</code>に委譲するために、<code>LoginCoordinator.swift</code>に以下を記述する。</li>
+</ol>
+<pre><code>// MARK: - LoginViewControllerDelegate
+extension LoginCoordinator: LoginViewControllerDelegate {
+    func LoginViewControllerDidRequestToShowMainScreen() {
+        showImageList()
+    }
+}
+</code></pre>
+<ul>
+<li>こうすることで、loginButton押下時にimageList画面に遷移する事ができるようになりました。</li>
+</ul>
+<p><strong>タブバーの実装</strong></p>
+<ul>
+<li>これでCoordinatorによってLogin画面からImageList画面に遷移できるようになりましたが、本アプリは複数のメイン画面から構成されるため、切り替えを簡単にするためのタブバーを実装しましょう。それには<code>UITabBarController</code>と呼ばれるクラスを用います。</li>
+</ul>
+<ol type="1">
+<li><code>BaseTabScene</code>を作成し、<code>BaseTabViewController.swift</code>を作成、以下のコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class BaseTabViewController: UITabBarController {
+    class func initialize(navigationControllers: [UINavigationController]) -&gt; BaseTabViewController {
+        let viewController = BaseTabViewController()
+        viewController.setViewControllers(navigationControllers,
+                                          animated: false)
+        viewController.setupUI()
+        return viewController
+    }
+}
+
+// MARK: - Private properties
+private extension BaseTabViewController {
+    func setupUI() {
+        setupTabBar()
+    }
+
+    func setupTabBar() {
+        let appearance = UITabBarAppearance()
+        appearance.backgroundColor = .yellow
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+        tabBar.isTranslucent = false
+        tabBar.tintColor = .black
+    }
+}
+</code></pre>
+<ul>
+<li>UITabBarControllerの構成→setViewControllersにより設定されたNavigationController全てについてタブを作成します。タブごとのタイトル、画像は各ViewControllerで実装します。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>BaseTabCoordinator.swift</code>を作成、以下のコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class BaseTabCoordinator {
+    // MARK: Private properties
+    private let window: UIWindow
+    private var rootViewController: BaseTabViewController?
+
+    private lazy var imageListNavigationController: UINavigationController = {
+        let navigationController = UINavigationController()
+        setupNavigationViewController(navigationController)
+        navigationController.tabBarItem.title = &#34;Image List&#34;
+        navigationController.tabBarItem.image = UIImage(systemName: &#34;photo&#34;)
+        return navigationController
+    }()
+
+    private lazy var imageListCoordinator: ImageListCoordinator = {
+        let coordinator = ImageListCoordinator(navigationController: imageListNavigationController)
+        return coordinator
+    }()
+
+    init(window: UIWindow) {
+        self.window = window
+    }
+
+    func start() {
+        let viewControllers = [imageListNavigationController]
+        rootViewController = BaseTabViewController.initialize(navigationControllers: viewControllers)
+        window.rootViewController = rootViewController
+        imageListCoordinator.start()
+    }
+}
+
+// MARK: - Private functions
+private extension BaseTabCoordinator {
+    func setupNavigationViewController(_ navigationController: UINavigationController) {
+        navigationController.navigationBar.isTranslucent = false
+        let appearance = UINavigationBarAppearance()
+        appearance.backgroundColor = .yellow
+        navigationController.navigationBar.standardAppearance = appearance
+        // これを設定しないと、スクロールし切った状態(スクロールできない状態を含む)のナビゲーションバーがdefault設定(真っ黒)になる。
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+    }
+}
+</code></pre>
+<ul>
+<li>lazyとは、{}内の処理が全て終わった後にその変数を使用するための修飾子です。詳しくは後述。</li>
+</ul>
+<ol type="1" start="3">
+<li>ImageListに直接遷移していた処理を全てBaseTab経由に変更します。</li>
+</ol>
+<ul>
+<li>まず、<code>LoginViewController.swift</code>の変更をします。<ul>
+<li><code>LoginViewControllerDidRequestToShowMainScreen</code>を右クリック(どこのものでも大丈夫です)→ Refactor &gt; Rename →<code>LoginViewControllerDidRequestToShowBaseTabScreen</code>に変更</li>
+</ul>
+</li>
+<li>次に、<code>LoginCoordinator.swift</code>を変更します。<ul>
+<li><code>goToMain</code>をRefactorで<code>goToTabBar</code>に変更</li>
+<li><code>showImageList</code>をRefactorで<code>showBaseTabScreen</code>に変更</li>
+<li><code>showBaseTabScreen</code>の中身を下記に変更</li>
+</ul>
+</li>
+</ul>
+<pre><code>func showBaseTabScreen() {
+    delegate?.goToTabBar()
+}
+</code></pre>
+<ul>
+<li>最後に、<code>AppDelegate.swift</code>を変更します。</li>
+</ul>
+<pre><code>class AppDelegate: UIResponder, UIApplicationDelegate {
+    ...
+    private var baseTabCoordinator: BaseTabCoordinator?
+    ...
+}
+
+// MARK: - Private functions
+private extension AppDelegate {
+    func showLoginScreen() {
+        ...
+        baseTabCoordinator = nil
+    }
+
+    func showBaseTabScreen() {
+        if let window,
+           baseTabCoordinator == nil {
+            baseTabCoordinator = BaseTabCoordinator(window: window)
+            baseTabCoordinator?.start()
+        }
+        loginCoordinator = nil
+    }
+}
+
+// MARK: - LoginCoordinatorDelegate
+extension AppDelegate: LoginCoordinatorDelegate {
+    func goToTabBar() {
+        showBaseTabScreen()
+    }
+}
+
+</code></pre>
+<ul>
+<li>これでMain画面がTabBarに内包されたImageListになりました。</li>
+</ul>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>Coordinator</strong></p>
+<ul>
+<li>今までViewControllerがViewへの表示の他、画面遷移も担っていたが、ViewController同士が密結合してしまう。ViewController間の遷移を別で定義することで、疎結合にする事が目的。</li>
+<li>遷移だけでなく、ViewControllerの生成、親ViewControllerの指定も担う。</li>
+<li>異なるCoordinator同士が後述のNavigationControllerを繋げていくことにより、画面の遷移を実現している。</li>
+</ul>
+<p><strong>NavigationController(UINavigationController)</strong></p>
+<ul>
+<li>複数の子ViewControllerを内包し、そこに新しいViewControllerをpushしたり、既存のViewControllerをpopすることによって画面遷移を実現するViewController。ViewControllersとNavigationBarが含まれている。</li>
+<li>二つ以上のViewControllerを持っている場合、画面の遷移に伴って自動でbackボタンが付与される。backボタンを押すと現在映っている画面がpopされる。</li>
+</ul>
+<p><strong>UITabBarController</strong></p>
+<ul>
+<li>UINavigationController同様、複数のViewControllerを持っているが、こちらはタブを選択することにより表示するViewControllerを変える事ができる。</li>
+<li>TabBarItemを設定すると、各タブに表示されるtitle、imageなどを設定する事ができる。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+<p><strong>NavigationController</strong> popとpush後のViewControllers</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第四章 APIを叩いてデータを取得する" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>ログイン後にメイン画面に遷移するコードを実装し、Coordinatorパターンによる画面遷移方法を学びます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://www.wwdcnotes.com/notes/wwdc15/408/" target="_blank">Protocol志向</a></li>
+<li><a href="https://developer.apple.com/documentation/foundation/urlsession" target="_blank">URLSession</a></li>
+<li><a href="https://medium.com/livefront/creating-a-service-layer-in-swift-ea771088fb66" target="_blank">Services</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/26bda664c338a014.png"></p>
+<h2 is-upgraded>手順</h2>
+<p><strong>UnsplashAPIを叩いてみる</strong></p>
+<ul>
+<li>2024/02現在、こちらのAPIは無料で使える画像検索サービスとなっております。以下の手順により登録、使用してください。</li>
+</ul>
+<ol type="1">
+<li><a href="https://www.webcreatorbox.com/tech/react-unsplash-api#toc-unsplash-1" target="_blank">こちらの記事</a>の<code>1. Unsplash APIの開発者登録</code>の手順に従い、AccessKeyとSecretKeyを取得する。</li>
+<li>curlまたはブラウザ等で、http://api.unsplash.com/search/photos?client_id=&lt;ご自身のaccess_key&gt;&amp;query=meat を叩く。</li>
+</ol>
+<p>すると、レスポンスは大まかに次のような形になっている。</p>
+<pre><code>{
+    &#34;total&#34;: xxxx,
+    ...
+    &#34;results&#34; : [
+        {
+            &#34;id&#34;: &#34;xxxxxx&#34;,
+            ...
+            &#34;alt_description&#34;: &#34;xxxxxxxx&#34;,
+            ...
+            &#34;urls&#34;: {
+                &#34;raw&#34;: &#34;https://xxxxx&#34;,
+                ...
+                &#34;thumb&#34;: &#34;https://xxxxx&#34;,
+                ...
+            }
+            ...
+        },
+    ]
+}
+</code></pre>
+<p><strong>ApiClientを作成する</strong></p>
+<ul>
+<li>APIを叩くための土台を提供するモデルであるApiClientを作成します。</li>
+<li>内容はAPIを叩くのに共通しているパラメータ、共通の処理をまとめたprotocolである。</li>
+</ul>
+<ol type="1">
+<li><code>Presentation</code>と同じ階層に<code>Infrastructure</code>ディレクトリ、その下に<code>Network</code>ディレクトリを作成し、<code>Network</code>に<code>CommonRequest.swift</code>、<code>ApiClient.swift</code>、<code>ApiClientProtocol.swift</code>を作成する。</li>
+<li><code>CommonRequest.swift</code>に以下コードを記述し、APIを叩く際に共通で使うパラメータを用意する。</li>
+</ol>
+<pre><code>protocol CommonRequest {
+    var baseUrlString: String { get }
+    var path: String { get }
+    var method: String { get }
+    var headerFields: [String: String] { get }
+    var parameters: [String: String] { get }
+}
+
+extension CommonRequest {
+    var baseUrlString: String { &#34;https://api.unsplash.com&#34; }
+    var path: String { &#34;/search/photos&#34; }
+    var headerFields: [String: String] { [:] }
+    var parameters: [String: String]? { [:] }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>ApiClientProtocol.swift</code>に以下コードを記載し、ApiClientで共通するメソッドのインタフェースを記述する。</li>
+</ol>
+<pre><code>import Foundation
+
+protocol ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, Error&gt;) -&gt; Void)
+}
+</code></pre>
+<ol type="1" start="4">
+<li><code>ApiClient.swift</code>に以下コードを記載し、ApiClientで共通するメソッドの具体を記述する。</li>
+</ol>
+<pre><code>struct ApiClient { }
+
+extension ApiClient: ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, Error&gt;) -&gt; Void) {
+        let request = createRequest(request)
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error {
+                completionHandler(.failure(error))
+                return
+            }
+
+            guard let data,
+                  let response = response as? HTTPURLResponse else {
+                completionHandler(.failure(NSError(domain: &#34;&#34;,
+                                                   code: 500)))
+                return
+            }
+
+            if response.statusCode == 200 {
+                completionHandler(.success(data))
+            } else {
+                completionHandler(.failure(NSError(domain: &#34;&#34;,
+                                                   code: response.statusCode)))
+            }
+
+        }
+        task.resume()
+    }
+}
+
+private extension ApiClient {
+    func createRequest(_ r: CommonRequest) -&gt; URLRequest {
+        let queryStrings = r.parameters.map { &#34;\($0.key)=\($0.value)&#34; }.joined(separator: &#34;&amp;&#34;)
+        let searchURL = URL(string: r.baseUrlString + r.path + &#34;?&#34; + queryStrings)!
+        var request = URLRequest(url: searchURL)
+        request.httpMethod = r.method
+        r.headerFields.forEach {
+            request.addValue($0.value,
+                             forHTTPHeaderField: $0.key)
+        }
+        return request
+    }
+}
+</code></pre>
+<ul>
+<li>Swiftはプロトコル指向の言語と言われており、実装と使用部分を区別する。そのため、あえて空の構造体にextensionを持たせるといった回りくどい書き方をしている。</li>
+</ul>
+<p><strong>デコードのためのmodelを用意する</strong></p>
+<ul>
+<li>次に、デコードやデコード後のデータ伝送のためのモデルである<code>DTO(Data Transfer Object)</code>を作成していきます。</li>
+</ul>
+<ol type="1">
+<li><code>Domain</code>中の<code>Models/Image</code>にデコードやデコード後のデータ伝送のためのモデルを格納する、<code>DTOs</code>ディレクトリを作成する。</li>
+<li>このディレクトリに上記resultsを受け取るmodelである<code>ServerResponseDTOForImage.swift</code>を作成する。</li>
+</ol>
+<pre><code>struct ServerResponseDTOForImage: Codable {
+    let results: [ImageInfoDTO]
+}
+</code></pre>
+<ol type="1" start="3">
+<li>同様に<code>ImageInfoDTO.swift</code>を作成し、resultsの中身をdecodeする下記コードを記述する。</li>
+</ol>
+<pre><code>struct ImageInfoDTO: Codable {
+    let id: String
+    let title: String
+    let urls: ImageURLInfoDTO
+}
+
+extension ImageInfoDTO {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title = &#34;alt_description&#34;
+        case urls
+    }
+}
+</code></pre>
+<ul>
+<li>CodingKeysは、DTOモデル上で使うプロパティ名とAPIから受け取ったjson上でのキー(CodingKey)名が異なる際、このキーはこのプロパティに対応している、といったことを示す事ができるenumである。</li>
+<li>swiftでは、一階層以上のネストのものを一つのモデルでデコードする事ができない。そのため、urlsのデコード専用の<code>ImageURLInfoDTO</code>を新たに作成する必要がある。</li>
+</ul>
+<ol type="1" start="4">
+<li>最後に、<code>ImageURLInfoDTO.swift</code>を作成し、下記コードを記述する。</li>
+</ol>
+<pre><code>struct ImageURLInfoDTO: Codable {
+    let raw: String
+    let thumb: String
+}
+</code></pre>
+<ol type="1" start="5">
+<li><code>ImageInfoDTO.swift</code>に戻り、<code>ImageModel</code>に変換するための関数、<code>toModel()</code>を作成する。</li>
+</ol>
+<pre><code>extension ImageInfoDTO {
+    func toModel() -&gt; ImageModel {
+        return .init(id: id,
+                     title: title,
+                     imageURLString: urls.raw,
+                     createdAt: createdAt)
+    }
+}
+</code></pre>
+<p><strong>UnsplashAPIを叩きデータを取得するためのクラス作成</strong></p>
+<ul>
+<li>何かしらデータを操作するクラスをxxxxServiceと呼ぶ。リポジトリ層のようなもの。</li>
+</ul>
+<ol type="1">
+<li>下記のようなフォルダ構成を作成する。</li>
+</ol>
+<pre><code>Domain
+├ Services
+|   ├ App
+|   |  ├ Implementation
+|   |  └ Interface
+|   └ Network
+|      ├ Implementation
+|      └ Interface
+└ Models
+</code></pre>
+<ul>
+<li>ここで、Networkはモデルを扱う操作のうち、通信を伴うもの、Appは通信を伴うものとlocalのもの全体をまとめたものになります。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>Network/Interface</code>に<code>ImageNetworkService.swift</code>を作成、以下を記述。</li>
+</ol>
+<pre><code>protocol ImageNetworkService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], Error&gt;) -&gt; Void) 
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>Network/Implementation</code>に<code>Image</code>ディレクトリを作成、<code>DefaultImageNetworkService.swift</code>、<code>ImageRequest.swift</code>を作成し、それぞれ以下を記述する。</li>
+</ol>
+<pre><code>// DefaultImageNetworkService.swift
+
+import Foundation
+
+final class DefaultImageNetworkService {
+    let apiClient = ApiClient()
+}
+
+// MARK: - RestaurantNetworkService
+extension DefaultImageNetworkService: ImageNetworkService {
+    // MARK: Images
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], Error&gt;) -&gt; Void) {
+        apiClient.call(request: ImageRequest(input: input)) { result in
+            switch result {
+                case .success(let data):
+                    do {
+                        let decodedData = try JSONDecoder().decode(ServerResponseDTOForImage.self,
+                                                                   from: data)
+                        completionHandler(.success(decodedData.results))
+                    } catch {
+                        completionHandler(.failure(error))
+                    }
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code>// ImageRequest.swift
+
+struct ImageRequest: CommonRequest {
+    var headerFields: [String : String]
+    let method: String = &#34;GET&#34;
+    let parameters: [String: String]
+
+    init(input: ImageInput) {
+        let encodedSearchQuery = input.searchQuery.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        var params: [ImageKeys: String] = [:]
+        params[.client_id] = &lt;ご自身のUnsplash Apiのaccess_key&gt;
+        params[.query] = encodedSearchQuery
+        var headers: [String: String] = [:]
+        headers[&#34;contentType&#34;] = &#34;application/json&#34;
+
+        var rawKeyParams: [String: String] = [:]
+        params.forEach { rawKeyParams[$0.key.rawValue] = $0.value }
+        parameters = rawKeyParams
+        headerFields = headers
+    }
+}
+
+struct ImageInput {
+    let searchQuery: String
+}
+</code></pre>
+<ol type="1" start="4">
+<li>同様に<code>App/Implementation</code>配下に<code>DefaultImageAppService.swift</code>, <code>App/Interface</code>配下に<code>ImageAppService.swift</code>を作成、以下を記述。</li>
+</ol>
+<pre><code>// DefaultImageAppService.swift
+
+final class DefaultImageAppService { 
+    // MARK: Private properties
+    private let networkService: ImageNetworkService
+
+    init(networkService: ImageNetworkService = DefaultImageNetworkService()) {
+        self.networkService = networkService
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        networkService.getImages(input) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt &lt; $1.createdAt }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code>// ImageAppService.swift
+
+protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
+}
+
+</code></pre>
+<p><strong>AppServiceを使い、実際にデータを表示</strong></p>
+<ol type="1">
+<li><code>ImageListViewModel.swift</code>に以下を追記。</li>
+</ol>
+<pre><code>protocol ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void)
+}
+...
+typealias ImageListViewModelProtocol = ImageListViewModelOutput &amp; ImageListViewModelInput // &lt;-- 追加
+
+extension ImageListViewModel {
+    struct Input {
+        let imageAppService: ImageAppService
+    }
+}
+
+final class ImageListViewModel {
+    // MARK: Private properties
+    private let input: Input
+    ...
+
+    init(input: Input) {
+        self.input = input
+        // fetchData()は削除
+    }
+}
+
+// MARK: - Private functions
+private extension ImageListViewModel {
+    // fetchData()は削除
+
+    func makeCellViewModel(_ model: ImageModel) -&gt; ImageListCellViewModel {
+        .init(input: .init(title: model.title,
+                           imageURLString: model.imageURLString))
+    }
+}
+
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var rows: [ImageListCellViewModel] {
+        return data
+    }
+}
+
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(images.map { self.makeCellViewModel($0) })
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>ImageListViewController.swift</code>のsetupBindingsを下記に書き換える</li>
+</ol>
+<pre><code>func setupBindings() {
+    viewModel.applyData { [weak self] imageRows in
+        DispatchQueue.main.async {
+            self?.dataSource.apply(imageRows)
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>これで、実際のデータが表示されるようになりました。</li>
+</ul>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>Protocol志向</strong></p>
+<ul>
+<li>クラスだとメソッドのオーバーライドやクラス内での共有など、オブジェクト指向特有の問題があったため、それを克服するためにprotocolを使ってプログラミングをしようとしたもの。</li>
+</ul>
+<p><strong>URLSession</strong></p>
+<ul>
+<li>Foundationにもともと組み込まれている、ネットワーク通信のためのクラス。</li>
+<li>Swift公式のライブラリであるため、他製ライブラリを使う場合に比べてコードのメンテがずっと続く利点があるが、コードが複雑になりやすいデメリットがある。</li>
+</ul>
+<p><strong>Services</strong></p>
+<ul>
+<li>ネットワークを用いた通信、またはローカルストレージへの通信を伴う、データの操作を担う処理群の総称。</li>
+<li>データは多くはDTO modelを介して操作される。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第五章 データを保存する。" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>インターネットに繋がっていなくてもデータを取得できるようにlocal storageに保存したり、複数ユーザーでデータが共有できるようにネット上にデータを保存するための実装をしていきます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>RealmSwift</li>
+<li>Firebase(FireStore)</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p>online</p>
+</td><td colspan="1" rowspan="1"><p>offline</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p class="image-container"><img alt="alt text" src="img/73200ef5f539f12.png"></p>
+</td><td colspan="1" rowspan="1"><p class="image-container"><img alt="alt text" src="img/9990027c42a333e8.png"></p>
+</td></tr>
+</table>
+<h2 is-upgraded>手順</h2>
+<p><strong>localに保存するためのライブラリ、RealmSwift追加</strong></p>
+<ul>
+<li>まず、下記の手順でlocalに保存するために頻繁に使われるライブラリであるRealmをimportする。</li>
+</ul>
+<ol type="1">
+<li>下図のように、アプリ名 &gt; PROJECTのアプリ名 &gt; <code>Package Dependencies</code> &gt; +ボタンを押す。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/73ceb6bd8259b8f6.png"></p>
+<ol type="1" start="2">
+<li>右上の検索窓で<code>https://github.com/realm/realm-swift.git</code>を検索し、右下の<code>Add Packages</code>をクリックする。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/d3fd1ad3ae975cda.png"></p>
+<ol type="1" start="3">
+<li>選択画面が出てくるので、<code>Realm</code>、<code>RealmSwift</code>を選択し、<code>Add Package</code>を押すと、ライブラリが追加される。</li>
+<li>TARGETS &gt; アプリ名 &gt; Frameworks, Libraries, and Embedded Content への、先ほどの二つ追加も忘れずに行う。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/8afb95ad8c9d712a.png"></p>
+<p><strong>localに保存するためのモデルを作る</strong></p>
+<ul>
+<li>Realmでは、<code>Object</code>というクラスを継承したモデルを用います。</li>
+</ul>
+<ol type="1">
+<li><code>Models</code>の<code>Image</code>ディレクトリで<code>ImageObject.swift</code>を作成し、下記コードを記述する。</li>
+</ol>
+<pre><code>import RealmSwift
+
+class ImageObject: Object {
+    @Persisted(primaryKey: true) var id: String
+    @Persisted var title: String
+    @Persisted var imageURLString: String
+    @Persisted var createdAt: String
+}
+
+extension ImageObject {
+    convenience init(id: String,
+                     title: String,
+                     imageURLString: String,
+                     createdAt: String) {
+        self.init()
+        self.id = id
+        self.title = title
+        self.imageURLString = imageURLString
+        self.createdAt = createdAt
+    }
+}
+</code></pre>
+<ul>
+<li>Objectは各プロパティの値を入れてインスタンス化するのに、独自のinitメソッドを定義する必要があります。convenienceは他のイニシャライザの存在のもと、追加でイニシャライザを定義したい時に使われる修飾子。</li>
+<li><code>@Persisted</code>で囲われた値がローカルに永続保存されるデータとなる。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>Infrastructure/Storage</code>ディレクトリにRealmインスタンス初期化のためのクラスを記述するため、<code>RealmStorage.swift</code>を作る。</li>
+</ol>
+<ul>
+<li>通常、realmのインスタンス化は<code>try! Realm()</code>により行うことができるが、このコードだとスキーマの変更をした際にデータ不整合でアプリがクラッシュしてしまう。スキーマを更新してもクラッシュすることを防ぐよう、下記のコードでマイグレーションを行えるようにする。</li>
+</ul>
+<pre><code>import RealmSwift
+
+struct RealmConstants {
+    static let lastDBVersion: UInt64 = 1
+}
+
+final class RealmStorage {
+    // MARK: Properties
+    private var realm: Realm {
+        guard let realm = try? Realm(configuration: RealmStorage.config()) else {
+            fatalError(&#34;Could not create Realm&#34;)
+        }
+        realm.refresh()
+        return realm
+    }
+}
+
+extension RealmStorage {
+    static func config() -&gt; Realm.Configuration {
+        var config = Realm.Configuration()
+        config.schemaVersion = RealmConstants.lastDBVersion
+        config.migrationBlock = { migration, oldSchemaVersion in
+            if oldSchemaVersion &lt; RealmConstants.lastDBVersion {
+                // ここに変更したmodelデータを全部置き換えるコードを記述する。
+            }
+        }
+        return config
+    }
+}
+</code></pre>
+<ul>
+<li>まず、上記コードからrealmインスタンスを呼び出すと、realm初期化時にマイグレーションのための設定、<code>Realm.Configuration</code>が呼ばれる。具体的には、<code>schemaVersion</code>と<code>migrationBlock</code>を上記コードのように設定し、DBに変更があるたびにschemaVersionを上げることでマイグレーションが正常に起こるようになる。</li>
+<li>不整合の原因は既存データのmodelスキーマと新規作成スキーマが合わないことによって生じるので、既存データを新規に新しいデータに置き換えるコードをif文中に書いていくイメージである。</li>
+</ul>
+<ol type="1" start="3">
+<li>トランザクション実行中は他のトランザクションを実行しないようにするためのextension, <code>Realm+SafeWrite.swift</code>を<code>Extension</code>ディレクトリに作成する。</li>
+</ol>
+<pre><code>import RealmSwift
+
+extension Realm {
+    public func safeWrite(_ block: (() throws -&gt; Void)) throws {
+        if isInWriteTransaction {
+            try block()
+        } else {
+            try write(block)
+        }
+    }
+}
+</code></pre>
+<p><strong>データ保存のためのServiceを作成する</strong></p>
+<ol type="1">
+<li><code>Services</code>ディレクトリ配下に<code>Storage</code>を作成し、<code>App</code>、<code>Network</code>同様に<code>Implementation</code>、<code>Interface</code>を作成する。</li>
+<li><code>Interface</code>配下に作成する<code>ImageStorageService.swift</code>中で下記のように保存(上書き)、取得用プロトコルを作成する。</li>
+</ol>
+<pre><code>protocol ImageStorageService {
+    func saveImages(_ images: [ImageDTO])
+    func getImages(completionHandler: @escaping ([ImageDTO]) -&gt; Void)
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>Implementation</code>配下に作成する<code>DefaultImageStorageService.swift</code>中で具体処理を記述する。</li>
+</ol>
+<pre><code>import Foundation
+import RealmSwift
+
+final class DefaultImageStorageService {
+    // MARK: Private properties
+    private let configuration: Realm.Configuration
+    private var realm: Realm {
+        guard let realm = try? Realm(configuration: configuration) else {
+            fatalError(&#34;Failed to initialize Realm.&#34;)
+        }
+        return realm
+    }
+
+    // MARK: Lifecycle functions
+    init(configuration: Realm.Configuration = RealmStorage.config()) {
+        self.configuration = configuration
+    }
+}
+
+// MARK: - ImageStorageService
+extension DefaultImageStorageService: ImageStorageService {
+    func saveImages(_ images: [ImageDTO]) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            do {
+                let imageObjects = images.map { ImageObject(id: $0.id,
+                                                            title: $0.title,
+                                                            imageURLString: $0.imageURLString,
+                                                            createdAt: $0.createdAt)}
+                try self.realm.safeWrite {
+                    self.realm.add(imageObjects,
+                                   update: .all)
+                }
+            } catch {
+                print(error)
+            }
+        }
+    }
+
+    func getImages(completionHandler: @escaping ([ImageDTO]) -&gt; Void) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            let images = self.realm.objects(ImageObject.self)
+            completionHandler(images.map { $0.toDTO() }.sorted { $0.createdAt &lt; $1.createdAt })
+        }
+    }
+}
+</code></pre>
+<ul>
+<li><code>.objects(クラス名.self)</code>でクラスのオブジェクト全てを取得でき、また<code>.add(オブジェクト)</code>でオブジェクトの保存ができる。</li>
+<li>保存したオブジェクトはアプリを消去するまでlocal storageに残る。</li>
+</ul>
+<p><strong>StorageServiceの組み込み</strong></p>
+<ul>
+<li>getしたデータをすべてlocalに保存するよう、AppServiceの処理を書き換えます。</li>
+</ul>
+<ol type="1">
+<li><code>DefaultImageAppService.swift</code>, <code>ImageAppService.swift</code>をそれぞれ、下記のように書き換える。</li>
+</ol>
+<pre><code>final class DefaultImageAppService { 
+    ...
+    private let storageService: ImageStorageService
+
+    init(networkService: ImageNetworkService = DefaultImageNetworkService(),
+         storageService: ImageStorageService = DefaultImageStorageService()) { // &lt;-- 追加
+        self.networkService = networkService
+        self.storageService = storageService // &lt;-- 追加
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        storageService.getImages { cachedImages in
+            cacheCompletionHandler(cachedImages.map { $0.toModel() })
+        }
+        networkService.getImages(input) { [weak self] result in
+            switch result {
+                case .success(let images):
+                    self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                       title: $0.title,
+                                                                       imageURLString: $0.urls.raw,
+                                                                       createdAt: $0.createdAt) })
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt &lt; $1.createdAt }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+                    self?.storageService.getImages { cacheImages in
+                        completionHandler(.success(cacheImages.map { $0.toModel() }))
+                    }
+            }
+        }
+    }
+}
+
+</code></pre>
+<pre><code>protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                   completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
+    ...
+}
+</code></pre>
+<ul>
+<li>これでnetworkがオフラインでも、前回に取得したデータが表示されるようになりました。</li>
+</ul>
+<p><strong>データの保存取得テスト</strong></p>
+<ul>
+<li>画像こそ見えませんが、テキストは全件ローカルから読み出され、一覧表示されているのがわかります。</li>
+</ul>
+<p class="image-container"><img style="width: 300.00px" src="img/9990027c42a333e8.png"></p>
+<p><strong>Firebaseのセットアップ</strong></p>
+<ul>
+<li>ここからはFirebaseの一機能であるFirestoreを使って、ネット上にデータを保存してきます。</li>
+</ul>
+<ol type="1">
+<li>https://console.firebase.google.com/ にアクセスし、任意の名前でプロジェクトを追加してください(Analyticsはなくても大丈夫です)。</li>
+<li>iOSのボタンを押し、BundleIDの入力欄に、アプリ名 &gt; Identityに載っているBundle Identifierを入力します。</li>
+<li><code>GoogleService-info.plist</code>をダウンロードしてください。そしてXcodeの指示されたルートにこのファイルをドラッグ&amp;ドロップし、画像の通りのチェックマークで保存してください。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/23931f314c76d49e.png"></p>
+<ol type="1" start="4">
+<li>指示された通りに、firebaseをAddPackageします。<code>FirebaseFirestoreSwift</code>を選択して追加してください。</li>
+<li>Firestoreのページに飛び、テストモードでデータベースを作成してください。(プロビジョニングに若干の時間がかかります)</li>
+<li>作成されたデータベースのページの、「ルール」欄を下記に書き換え、「公開」する。</li>
+</ol>
+<pre><code>service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true; &lt;-- false を trueにする
+    }
+  }
+}
+</code></pre>
+<ul>
+<li>これでFirebaseの準備は完了です。次に、Firebaseを使った操作を記述するクラスを作成していきます。</li>
+</ul>
+<p><strong>Firebaseを使うAppServiceを作成する</strong></p>
+<ol type="1">
+<li>今まで同様、<code>Services/App/Interface</code>に<code>FirebaseAppService.swift</code>, <code>Services/App/Implementation</code>に<code>DefaultFirebaseAppService.swift</code>を作成する。</li>
+<li><code>FirebaseAppService.swift</code>に下記を記述し、protocol定義する。</li>
+</ol>
+<pre><code>protocol FirebaseAppService {
+    static var sharedInstance: FirebaseAppService { get }
+    func createData(to collectionName: String,
+                    of document: String,
+                    data: [String: String])
+    func readAll&lt;T: Codable&gt;(from collectionName: String,
+                             type: T.Type,
+                             completionHandler: @escaping (Result&lt;[T]?, Error&gt;) -&gt; Void)
+}
+
+struct CollectionName {
+    static let images = &#34;images&#34;
+}
+</code></pre>
+<ul>
+<li>sharedInstanceはシングルトンデザインパターンのために定義する変数で、これによりインスタンスの生成を一個に限定することができる。ここでは、Firebaseの初期化コードを一回に限定するために用いている。コードでどのような使い方をするかは次項。</li>
+<li>Firestoreの詳しい使い方については後述するが、CollectionというDBにdocumentというキーを持ったデータを格納していくイメージである。</li>
+</ul>
+<p><strong>ImageをFirestoreに保存、取得</strong></p>
+<ol type="1">
+<li><code>ImageAppService.swift</code>と<code>DefaultImageAppService.swift</code>に、<code>ImageModel</code>をfirestore経由で保存・取得するための関数をそれぞれ追記する。</li>
+</ol>
+<ul>
+<li><code>ImageAppService.swift</code></li>
+</ul>
+<pre><code>protocol ImageAppService {
+    ...
+    func saveImage(_ image: ImageModel)
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void)
+}
+</code></pre>
+<ul>
+<li><code>DefaultImageAppService.swift</code></li>
+</ul>
+<pre><code>final class DefaultImageAppService {
+    // MARK: Private properties
+    ...
+    private let firebaseAppService: FirebaseAppService
+
+    init(...
+         firebaseAppService: FirebaseAppService = DefaultFirebaseAppService.sharedInstance) {
+        ...
+        self.firebaseAppService = firebaseAppService
+    }
+}
+
+// MARK: - ImageAppService
+extension DefaultImageAppService: ImageAppService {
+    ...
+    func saveImage(_ image: ImageModel) {
+        firebaseAppService.createData(to: CollectionName.images,
+                                      of: image.id,
+                                      data: [&#34;id&#34;: image.id,
+                                             &#34;title&#34;: image.title,
+                                             &#34;imageURLString&#34;: image.imageURLString, 
+                                             &#34;createdAt&#34;: image.createdAt])
+    }
+
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+        firebaseAppService.readAll(from: CollectionName.images,
+                                   type: ImageDTO.self) { result in
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>ImageListViewModel.swift</code>の<code>applyData</code>を下記に書き換える。</li>
+</ol>
+<pre><code>// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+//                    completionHandler(images.map { self.makeCellViewModel($0) })
+                  // ひとまず、取得できたデータを一件のみ、firestoreに保存する。
+                    self.input.imageAppService.saveImage(images[0])
+//                self.input.imageAppService.getAllImages { result in
+//                    switch result {
+//                    case .success(let images):
+//                        completionHandler(images.map { self.makeCellViewModel($0) })
+//                    case .failure(let error):
+//                        print(error)
+//                    }
+//                }
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li>プロジェクトをビルドすると、データが保存されている。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/ee97f107a76f91e5.png"></p>
+<ol type="1" start="4">
+<li><code>ImageListViewModel.swift</code>の<code>applyData</code>のコメントアウトを下記のように付け替え、再びビルドすると保存したデータのみが表示される。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/1be48cb4fc080e7e.png"></p>
+<ol type="1" start="5">
+<li>保存できることがわかった上で、<code>applyData</code>を元に戻します。</li>
+</ol>
+<pre><code>// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func applyData(completionHandler: @escaping ([ImageListCellViewModel]) -&gt; Void) {
+        input.imageAppService.getImages(.init(searchQuery: &#34;meat&#34;)) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let images):
+                    completionHandler(images.map { self.makeCellViewModel($0) })
+                case .failure(let error):
+                    // TODO: Error handling
+                    print(error)
+            }
+        }
+    }
+}
+</code></pre>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>Realm</strong></p>
+<ul>
+<li>localにデータを保存するためのライブラリ。</li>
+<li>Swiftでlocalに保存する方法はいくつかあるが、その中でもこちらはDBのリレーションが定義できることに強みがある。</li>
+<li>Objectと呼ばれるデータ型でデータを保存する。カラムとしてサポートされているデータ型は、<code>Bool</code>、<code>Int</code>、<code>Int8</code>、<code>Int16</code>、<code>Int32</code>、<code>Int64</code>、<code>Double</code>、<code>Float</code>、<code>String</code>、<code>Date</code>、<code>Data</code>である。 <ul>
+<li>ただし、一度ビルドした後にカラムを変更するとビルドの度に不整合エラーが出るので、変更の都度マイグレーション設定をする必要がある。</li>
+</ul>
+</li>
+<li>CRUDの記述も簡単にできる。</li>
+</ul>
+<p><strong>Firebase</strong></p>
+<ul>
+<li>モバイルアプリだけでなく、様々なプラットフォームにPaaSとして様々な機能を提供する、Googleのサービス。複数サービスを横断してデータの授受ができるところに強みがある。</li>
+<li>FirebaseAuthenticationは認証機能全般を提供しており、内部実装を意識せずに簡単にログイン機能/ログアウト機能を作成できる。</li>
+<li>FirestoreはNoSQLを使用したデータ保存のライブラリで、CollectionというまとまりにdocumentというIDを保存し、各documentごとにデータを格納していく。 <ul>
+<li>各documentにcollectionを生やし、サブコレクションとしたり、Referenceを付与することでリレーションの構築が行える。</li>
+</ul>
+</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第六章 取得したデータをリアルタイムで更新する。" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>async/awaitを使った非同期処理を学び、取得したデータをリアルタイムで反映させる。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li><a href="https://developer.apple.com/documentation/swift/concurrency" target="_blank">async/await</a></li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/61df8ae1a80cc6f3.png"></p>
+<h2 is-upgraded>手順</h2>
+<p><strong>画像ロード時のワーニングを消す</strong></p>
+<ol type="1">
+<li><code>ImageListCell.swift</code>の<code>func setImage()</code>関数を以下に書き換える。</li>
+</ol>
+<pre><code>func setImage() {
+    Task {
+        if let url = URL(string: viewModel.imageURLString) {
+            let (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
+            Task { @MainActor in
+                imageView.image = UIImage(data: data)
+            }
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>URLSession.shared.dataはasync関数であり、awaitをつけることで、その非同期関数の実行結果が出次第、後続の処理に進むようになる。</li>
+<li>Taskは時間のかかる処理を他のスレッド内に移譲する、DispatchQueueのようなもの。<code>@MainActor</code>をつけるとメインスレッドでの実行になる。<code>async/await</code>処理は必ずTask内で行う必要がある。<ul>
+<li>UIの変更に関する処理は全てメインスレッド内で行う必要がある。</li>
+</ul>
+</li>
+<li>これで、紫色のワーニングは出なくなりました。</li>
+</ul>
+<p><strong>検索可能にする</strong></p>
+<ol type="1">
+<li><code>ImageListViewController.storyboard</code>上に、<code>UISearchBar</code>を&#34;+&#34;ボタンから選択して載せる。</li>
+<li>図のように、<code>ImageCollectionView</code>の上端を<code>SearchBar</code>の下端に合わせ、そのほかはsafeAreaに沿って広がるようにAutolayoutの設定を行う。</li>
+</ol>
+<p class="image-container"><img style="width: 300.00px" src="img/e523cd9bc950f80b.png"></p>
+<ol type="1" start="3">
+<li><code>ImageListViewController.swift</code>上でIBOutlet接続をし、下記のようなコードを記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+final class ImageListViewController: UIViewController {
+    ...
+    @IBOutlet private var searchBar: UISearchBar! {
+        didSet {
+            searchBar.backgroundColor = .yellow
+            searchBar.layer.borderColor = UIColor.yellow.cgColor
+            searchBar.searchBarStyle = .minimal
+            searchBar.delegate = self
+        }
+    }
+    ...
+}
+...
+extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        Task { [weak self] in
+            guard let text = searchBar.text,
+                  let self
+            else {
+                return
+            }
+            let imageRows = try await self.viewModel.search(text)
+            self.dataSource.apply(imageRows)
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="4">
+<li><code>ImageListViewModel.swift</code>内に<code>search</code>関数を追加する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelInput {
+    ...
+    func search(_ text: String) async throws -&gt; [ImageListCellViewModel]
+}
+...
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    ...
+    func search(_ text: String) async throws -&gt; [ImageListCellViewModel] {
+        var imageRows = [ImageListCellViewModel]()
+        return try await withCheckedThrowingContinuation({ continuation in
+            input.imageAppService.getImages(.init(searchQuery: text),
+                                            cacheCompletionHandler: { cached in
+                imageRows = cached.map { self.makeCellViewModel($0) }
+            }) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                    case .success(let images):
+                        imageRows = images.map { self.makeCellViewModel($0)}
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                }
+                continuation.resume(returning: imageRows)
+            }
+        })
+    }
+}
+</code></pre>
+<ol type="1" start="5">
+<li><code>applyData()</code>関数、<code>rows</code>はもう不要なので、使用部分と関数自体、変数自体を全て消す。</li>
+</ol>
+<ul>
+<li><code>applyData()</code></li>
+<li><code>ImageListViewController.swift</code>の<code>setupBindings()</code>内</li>
+<li><code>ImageListViewModel.swift</code>の<code>ImageListViewModelInput</code>, extensionの<code>ImageListViewModelInput</code>内 　- 関数自体を消すと赤色のワーニングが出るので、それら全てを消せば大丈夫です。</li>
+<li><code>rows</code></li>
+<li><code>ImageListViewModel.swift</code>の<code>ImageListViewModelOutput</code>, extensionの<code>ImageListViewModelOutput</code>内</li>
+</ul>
+<p><strong>Observerパターンを使って書き換える</strong></p>
+<ul>
+<li>このままでも検索結果がリアルタイムで反映されるのですが、Inputメソッド(つまり、ViewModelに影響を及ぼす方向の処理)であるはずの<code>search()</code>が、ViewへのOutput(つまり、Viewに影響を与える処理)の役割も果たしており、微妙です。 <ul>
+<li>本来なら、<code>search()</code>はViewModel内でデータを取得するトリガーとなる処理で、取得されたデータをViewに反映するのは別のOutputのメソッド(または変数)でなくてはいけないはずです。</li>
+</ul>
+</li>
+<li>そこで登場するのがObserverパターンによる実装です。変数がリアルタイムでViewModelでの変更をViewに伝えることができます。</li>
+</ul>
+<ol type="1">
+<li><code>ImageListViewModel.swift</code>にObserverとなるSubjectを記述する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream&lt;[ImageListCellViewModel]&gt; { get }
+}
+...
+final class ImageListViewModel {
+    ...
+    private var imagesHandler: (([ImageListCellViewModel]) -&gt; Void)? // &lt;-- 追加
+    ...
+}
+...
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    var imageListCellViewModelsSubject: AsyncStream&lt;[ImageListCellViewModel]&gt; {
+        return AsyncStream { continuation in
+            imagesHandler = { images in
+                continuation.yield(images)
+            }
+        }
+    }
+}
+...
+</code></pre>
+<ul>
+<li><code>AsyncStream</code>は値が後から入ってくるListのようなイメージ。(そのため、値が入ってくるのを待っている状態であり、値が入ってきた際にawaitの値に対応した処理が行える。) <ul>
+<li><code>AsyncStream</code>に値を入れる際には、クロージャ内の<code>continuation</code>の<code>yield</code>メソッドの引数に値を入れれば良い。 <ul>
+<li>こちらは、<code>imagesHandler()</code>関数が呼ばれた際、引数である<code>images</code>が<code>AsyncStream</code>に入る。</li>
+<li>結果、<code>imageListCellViewModelsSubject</code>に対して施した<code>for await</code>部分に<code>images</code>が代入される。詳しくは後述。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ol type="1" start="2">
+<li><code>ImageListViewController.swift</code>内でviewModelとviewの紐付け(バインディング)を行うコードを記述する。</li>
+</ol>
+<pre><code>final class ImageListViewController: UIViewController {
+    ...
+    deinit {
+        imagesTask?.cancel()
+        ...
+    }
+}
+...
+private extension ImageListViewController {
+    func setupBindings() {
+        imagesTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await items in self.viewModel.imageListCellViewModelsSubject {
+                self.dataSource.apply(items)
+            }
+        }
+    }
+}
+...
+</code></pre>
+<ul>
+<li><code>deinit</code>は、インスタンスへの参照を行うものがなくなり、インスタンスが除去される時に呼ばれる関数。毎<code>deinit</code>ごとに形成している<code>Observer</code>をキャンセルしたいため、上記コードを記述している。</li>
+</ul>
+<ol type="1" start="3">
+<li><code>search()</code>をちゃんとしたInputの形に書き換える。</li>
+</ol>
+<pre><code>protocol ImageListViewModelInput {
+    func search(_ text: String)
+}
+...
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func search(_ text: String) {
+        var images: [ImageListCellViewModel]?
+        input.imageAppService.getImages(.init(searchQuery: text),
+                                        cacheCompletionHandler: { [weak self] cached in
+            guard let self else { return }
+            images = cached.map { self.makeCellViewModel($0) }
+        }) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let remoteImages):
+                    images = remoteImages.map{ self.makeCellViewModel($0)}
+                case .failure(let error):
+                    print(error)
+            }
+            self.imagesHandler?(images ?? [])
+        }
+    }
+}
+
+</code></pre>
+<ol type="1" start="4">
+<li><code>ImageListViewController.swift</code>の<code>UISearchBarDelegate</code>部分を書き換える。</li>
+</ol>
+<pre><code>extension ImageListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        guard let text = searchBar.text else { return }
+        self.viewModel.search(text)
+    }
+}
+
+</code></pre>
+<ul>
+<li>これでObserverパターンでリアルタイムで検索結果を変えることができるようになりました。</li>
+</ul>
+<p><strong>取得のたびにキャッシュの画像を全削除するようにする</strong></p>
+<ul>
+<li>このままだとキャッシュに画像を取得した分だけ無限にデータが溜まっていくため、ネットワークから取得した画像を保存する直前に前に取得した画像データを全て削除するように処理を書き換えます。</li>
+</ul>
+<ol type="1">
+<li><code>ImageStorageService.swift</code>に下記関数を追加する。</li>
+</ol>
+<pre><code>protocol ImageStorageService {
+    ...
+    func deleteAllImages(completionHandler: @escaping () -&gt; Void)
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>DefaultImageStorageService.swift</code>に下記関数を追加する。</li>
+</ol>
+<pre><code>func deleteAllImages(completionHandler: @escaping () -&gt; Void) {
+    DispatchQueue.global().async { [weak self] in
+        guard let self else { return }
+        do {
+            try self.realm.safeWrite {
+                let objectsToDelete = self.realm.objects(ImageObject.self)
+                self.realm.delete(objectsToDelete)
+            }
+            completionHandler()
+        } catch {
+            completionHandler()
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>DefaultImageStorageService.swift</code>の<code>getImages</code>を下記に書き換える。</li>
+</ol>
+<pre><code>func getImages(_ input: ImageInput,
+                cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                completionHandler: @escaping (Result&lt;[ImageModel], Error&gt;) -&gt; Void) {
+    storageService.getImages { cachedImages in
+        cacheCompletionHandler(cachedImages.map { $0.toModel() })
+    }
+    networkService.getImages(input) { [weak self] result in
+        switch result {
+            case .success(let images):
+                self?.storageService.deleteAllImages {
+                    self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                        title: $0.title,
+                                                                        imageURLString: $0.urls.raw,
+                                                                        createdAt: $0.createdAt) })
+                }
+                completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt &lt; $1.createdAt }))
+            case .failure(let error):
+                completionHandler(.failure(error))
+                self?.storageService.getImages { cacheImages in
+                    completionHandler(.success(cacheImages.map { $0.toModel() }))
+                }
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>これでlocalの画像データを全て削除してから改めて画像を保存するようになりました。</li>
+</ul>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>async/await</strong></p>
+<ul>
+<li>非同期で行う処理を同期処理のような書き方で記述するために追加された機能。Closureを使うものに比べてネストが深くなりにくい。</li>
+<li><code>async</code>で実行した、時間のかかる関数の結果を待ち、結果が出てから次の処理に進む。 <ul>
+<li>上から下に順番に実行されるようになり、非常に可読性が上がる。</li>
+</ul>
+</li>
+</ul>
+<p><strong>Task</strong></p>
+<ul>
+<li>非同期の処理を行う作業単位。全ての非同期処理が何らかの<code>Task</code>として実行される。</li>
+<li>メインスレッドで行う<code>Task</code>(UIに関する処理など)は<code>@MainActor</code>という修飾子を付与する。</li>
+</ul>
+<p><strong>Observerパターン</strong></p>
+<ul>
+<li>ソフトウェア開発において良い方法とされるノウハウの蓄積であるデザインパターンの一種。</li>
+<li>観察対象に何かしらの変更があった際に、全ての観察者に通知される仕組みのこと。</li>
+<li>本項目においては、<code>imageListCellViewModelsSubject</code>が観察対象(Observable)であり、それが<code>ImageListViewController</code>にバインディングした<code>Task</code>によって観察される。</li>
+<li>こちらを用いると、ViewModelへの変更(Input)とその変更に対するViewの変更(Output)を分離しやすくなる。</li>
+</ul>
+<h2 is-upgraded>各技術の理解</h2>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第七章 エラーを表示する" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>何かしらの不具合が生じた際に、それを適切にユーザーに伝える方法(エラーハンドリング方法)を学んでいきます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>UIAlertController</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<p class="image-container"><img style="width: 300.00px" src="img/59ed34378c1f6dc2.png"></p>
+<h2 is-upgraded>手順</h2>
+<p><strong>エラー表示用のUIViewController Extensionの作成</strong></p>
+<ol type="1">
+<li><code>Extension</code>ディレクトリに<code>UIViewController+Extras.swift</code>を作成し、以下を記述する。</li>
+</ol>
+<pre><code>import UIKit
+
+extension UIViewController {
+    func handleGeneralError(_ error: Error,
+                            onDismissHandler: (() -&gt; Void)? = nil) {
+        let alert = UIAlertController(title: &#34;An error occured&#34;,
+                                      message: error.localizedDescription,
+                                      preferredStyle: .alert)
+        alert.addAction(.init(title: &#34;OK&#34;,
+                              style: .default) {_ in
+            onDismissHandler?()
+        })
+        self.present(alert,
+                     animated: true)
+    }
+}
+</code></pre>
+<ul>
+<li>ここで表示するエラーによってはメッセージを変えたり、アラート内のボタン押下時のアクションの変更が行えたりします。</li>
+<li>引数内の<code>onDismissHandler()</code>では、OKボタンを押した後の動きを定義できます。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>ImageListViewModel.swift</code>にリアルタイムでErrorを表示するためのSubjectを作成する。</li>
+</ol>
+<pre><code>protocol ImageListViewModelOutput {
+    ...
+    var errorsSubject: AsyncStream&lt;ErrorsModel&gt; { get }
+}
+...
+final class ImageListViewModel {
+    ...
+    private var errorsHandler: ((ErrorsModel) -&gt; Void)?
+    ...
+}
+...
+// MARK: - ImageListViewModelOutput
+extension ImageListViewModel: ImageListViewModelOutput {
+    ...
+    var errorsSubject: AsyncStream&lt;ErrorsModel&gt; {
+        return AsyncStream { continuation in
+            errorsHandler = { error in
+                continuation.yield(error)
+            }
+        }
+    }
+}
+
+// MARK: - ImageListViewModelInput
+extension ImageListViewModel: ImageListViewModelInput {
+    func search(_ text: String) {
+        var images: [ImageListCellViewModel]?
+        input.imageAppService.getImages(.init(searchQuery: text),
+                                        cacheCompletionHandler: { [weak self] cached in
+            guard let self else { return }
+            images = cached.map { self.makeCellViewModel($0) }
+        }) { [weak self] result in
+            guard let self else { return }
+            switch result {
+                case .success(let remoteImages):
+                    images = remoteImages.map{ self.makeCellViewModel($0)}
+                case .failure(let error):
+                    self.errorsHandler?(error) &lt;-- // 変更
+            }
+            self.imagesHandler?(images ?? [])
+        }
+    }
+}
+
+</code></pre>
+<ol type="1" start="3">
+<li>2.によってSubjectに送出されたエラーを受け取るための関数を<code>ImageListViewController.swift</code>に記述する。</li>
+</ol>
+<pre><code>final class ImageListViewController: UIViewController {
+    ...
+    private var errorsTask: Task&lt;Void, Never&gt;?
+    ...
+    deinit {
+        ...
+        errorsTask?.cancel()
+    }
+}
+
+private extension ImageListViewController {
+    func setupBindings() {
+        ...
+        errorsTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await error in viewModel.errorsSubject {
+                self.handleGeneralError(error)
+            }
+        }
+    }
+}
+...
+</code></pre>
+<ul>
+<li>試しにWIFIを切って、ネットワークがない状態を作り出してみてください。完成イメージのようなポップアップが表示されたかと思います。</li>
+</ul>
+<p><strong>エラーの細分化</strong></p>
+<ul>
+<li>次に、エラーによって表示を変えるために、エラーを細分化するためのモデルを作成していきます。</li>
+<li>Swiftのエラーハンドリングでは、起こりうるエラーをenumで分類し、各Error送出場所に割り当てるといった方法がよく用いられます。</li>
+</ul>
+<ol type="1">
+<li><code>Domain/Models</code>に<code>ErrorsDTO.swift</code>, <code>ErrorsModel.swift</code>を作成し、それぞれ以下を記述する。</li>
+</ol>
+<pre><code>// ErrorsDTO.swift
+
+enum NetworkError {
+    case noInternetConnection
+    case timeout
+    case others(Error)
+}
+
+struct ServerError {
+    let statusCode: Int
+    let message: String
+}
+
+enum ErrorType {
+    case general
+    case network(NetworkError)
+    case server(ServerError)
+    case storage(String)
+}
+
+struct ErrorsDTO: Error {
+    var type: ErrorType
+}
+
+extension ErrorsDTO {
+    func toModel() -&gt; ErrorsModel {
+        .init(type: type)
+    }
+}
+
+</code></pre>
+<ul>
+<li>ErrorTypeに注目してください。現時点で起こりうるエラーは、インターネットの接続エラー、UnsplashAPIやFirebaseによるサーバーエラー、Realmによるストレージエラー、Swiftの内部エラーの4通りに大分できます。</li>
+<li>さらに、NetworkErrorはインターネット無接続、タイムアウトに分けられます。 <ul>
+<li>このように、考えうるエラーを全て洗い出し、enumにしていきます。</li>
+</ul>
+</li>
+</ul>
+<pre><code>struct ErrorsModel: Error {
+    var type: ErrorType
+}
+
+extension ErrorsModel {
+    var title: String {
+        switch type {
+            case .general:
+                return &#34;Unknown error occured&#34;
+            case .network(let networkError):
+                switch networkError {
+                    case .noInternetConnection:
+                        return &#34;Connection failed&#34;
+                    case .timeout:
+                        return &#34;Connection time out&#34;
+                    case .others(let error):
+                        return &#34;Network error occured&#34;
+                }
+            case .server:
+                return &#34;Server error occured&#34;
+            case .storage:
+                return &#34;Storage operation failed&#34;
+        }
+    }
+
+    var description: String {
+        switch type {
+            case .general:
+                return &#34;please retry after a while.&#34;
+            case .network(let networkError):
+                switch networkError {
+                    case .noInternetConnection:
+                        return &#34;there is no internet connection&#34;
+                    case .timeout:
+                        return &#34;the request is timed out&#34;
+                    case .others(let error):
+                        return error.localizedDescription
+                }
+            case .server(let serverError):
+                return serverError.message
+            case .storage(let description):
+                return description
+        }
+    }
+}
+</code></pre>
+<ul>
+<li>ここでは、Alertに表示する文章を分類しています。</li>
+</ul>
+<p><strong>定義したエラーを元に、既存のエラーハンドリングを書き換える</strong></p>
+<ol type="1">
+<li><code>ApiClient</code>にErrorsModelの定義をマッピングする。</li>
+</ol>
+<pre><code>// ApiClientProtocol.swift
+protocol ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, ErrorsDTO&gt;) -&gt; Void) // &lt;-- 変更
+}
+</code></pre>
+<pre><code>// ApiClient.swift
+extension ApiClient: ApiClientProtocol {
+    func call&lt;T: CommonRequest&gt;(request: T,
+                                completionHandler: @escaping (Result&lt;Data, ErrorsDTO&gt;) -&gt; Void) { // &lt;-- 変更
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error as? URLError { // &lt;-- URLErrorにキャストできる場合は、networkエラー。
+                completionHandler(.failure(convertToDTO(error)))
+                return
+            } else if error != nil {
+                completionHandler(.failure(.init(type: .general)))
+            }
+
+            guard let data,
+                  let response = response as? HTTPURLResponse else {
+                completionHandler(.failure(.init(type: .general))) // &lt;-- HTTPURLResponseにキャストできない場合は、generalエラー。
+                return
+            }
+
+            if response.statusCode == 200 {
+                completionHandler(.success(data))
+            } else {
+                completionHandler(.failure(.init(type: .server(.init(statusCode: response.statusCode,
+                                                                     message: String(data: data,
+                                                                                     encoding: .utf8) ?? &#34;&#34;)))))　// &lt;-- statusCodeに応じて、サーバーエラーを送出。
+            }
+
+        }
+        ...
+    }
+}
+
+private extension ApiClient {
+    ...
+    func convertToDTO(_ error: URLError) -&gt; ErrorsDTO {
+        switch error.code {
+            case .notConnectedToInternet,
+                    .networkConnectionLost:
+                return .init(type: .network(.noInternetConnection))
+            case .timedOut:
+                return .init(type: .network(.timeout))
+            default:
+                return .init(type: .network(.others(error)))
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="2">
+<li><code>ImageNetworkService</code>, <code>ImageStorageService</code>を新しい<code>ErrorsModel</code>を使った形に書き換える。</li>
+</ol>
+<pre><code>// ImageNetworkService.swift
+protocol ImageNetworkService {
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], ErrorsDTO&gt;) -&gt; Void) // &lt;-- 変更
+}
+
+</code></pre>
+<pre><code>// DefaultImageNetworkService.swift
+
+extension DefaultImageNetworkService: ImageNetworkService {
+    // MARK: Images
+    func getImages(_ input: ImageInput,
+                   completionHandler: @escaping (Result&lt;[ImageInfoDTO], ErrorsDTO&gt;) -&gt; Void) { // &lt;-- 変更
+        apiClient.call(request: ImageRequest(input: input)) { result in
+            switch result {
+                case .success(let data):
+                    do {
+                        let decodedData = try JSONDecoder().decode(ServerResponseDTOForImage.self,
+                                                                   from: data)
+                        completionHandler(.success(decodedData.results))
+                    } catch {
+                        print(&#34;Failed to decode to ImageDTO&#34;)
+                        completionHandler(.failure(.init(type: .general))) // &lt;-- 変更
+                    }
+                case .failure(let error):
+                    completionHandler(.failure(error))
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code>// ImageStorageService.swift
+protocol ImageStorageService {
+    ...
+    func deleteAllImages(completionHandler: @escaping (Result&lt;Void, ErrorsDTO&gt;) -&gt; Void) // &lt;-- Result型を返すように変更
+}
+
+</code></pre>
+<pre><code>// DefaultImageStorageService.swift
+
+extension DefaultImageStorageService: ImageStorageService {
+    // MARK: Images
+    func deleteAllImages(completionHandler: @escaping (Result&lt;Void, ErrorsDTO&gt;) -&gt; Void) {
+        DispatchQueue.global().async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.realm.safeWrite {
+                    let objectsToDelete = self.realm.objects(ImageObject.self)
+                    self.realm.delete(objectsToDelete)
+                }
+                completionHandler(.success(Void()))
+            } catch {
+                completionHandler(.failure(.init(type: .storage(error.localizedDescription))))
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="3">
+<li><code>ImageAppService</code>を新しい<code>ErrorsModel</code>を使った形に書き換える。</li>
+</ol>
+<pre><code>// ImageAppService.swift
+
+protocol ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                   completionHandler: @escaping (Result&lt;[ImageModel], ErrorsModel&gt;) -&gt; Void) // &lt;-- 変更
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], ErrorsModel&gt;) -&gt; Void) // &lt;-- 変更
+}
+
+</code></pre>
+<pre><code>// DefaultImageAppService.swift
+
+extension DefaultImageAppService: ImageAppService {
+    func getImages(_ input: ImageInput,
+                   cacheCompletionHandler: @escaping ([ImageModel]) -&gt; Void,
+                   completionHandler: @escaping (Result&lt;[ImageModel], ErrorsModel&gt;) -&gt; Void) { // &lt;-- 変更
+        storageService.getImages { cachedImages in
+            cacheCompletionHandler(cachedImages.map { $0.toModel() })
+        }
+        networkService.getImages(input) { [weak self] result in
+            switch result {
+                case .success(let images):
+                    self?.storageService.deleteAllImages { result in
+                        switch result {
+                            case .success:
+                                self?.storageService.saveImages(images.map { .init(id: $0.id,
+                                                                                   title: $0.title,
+                                                                                   imageURLString: $0.urls.raw,
+                                                                                   createdAt: $0.createdAt) })
+                            case .failure(let error):
+                                completionHandler(.failure(error.toModel())) // &lt;-- 変更
+                        }
+                    }
+                    completionHandler(.success(images.map { $0.toModel() }.sorted { $0.createdAt &lt; $1.createdAt }))
+                case .failure(let error):
+                    completionHandler(.failure(error.toModel())) // &lt;-- 変更
+                    self?.storageService.getImages { cacheImages in
+                        completionHandler(.success(cacheImages.map { $0.toModel() }))
+                    }
+            }
+        }
+    }
+    ...
+    func getAllImages(completionHandler: @escaping (Result&lt;[ImageModel], ErrorsModel&gt;) -&gt; Void) { // &lt;-- 変更
+        firebaseAppService.readAll(from: CollectionName.images,
+                                   type: ImageDTO.self) { result in
+            switch result {
+                case .success(let images):
+                    completionHandler(.success(images.map { $0.toModel() }))
+                case .failure(let error):
+                    completionHandler(.failure(.init(type: .server(.init(statusCode: 500,
+                                                                         message: error.localizedDescription))))) // &lt;-- 変更
+            }
+        }
+    }
+}
+</code></pre>
+<ol type="1" start="4">
+<li><code>handleGeneralError()</code>を、<code>ErrorsModel</code>を使った形に書き換える。</li>
+</ol>
+<pre><code>// ViewController+Extras.swift
+import UIKit
+
+extension UIViewController {
+    func handleGeneralError(_ error: ErrorsModel, // &lt;-- 変更
+                            onDismissHandler: (() -&gt; Void)? = nil) {
+        let alert = UIAlertController(title: error.title, // &lt;-- 変更
+                                      message: error.description, // &lt;-- 変更
+                                      preferredStyle: .alert)
+        alert.addAction(.init(title: &#34;OK&#34;,
+                              style: .default) {_ in
+            onDismissHandler?()
+        })
+        self.present(alert,
+                     animated: true)
+    }
+}
+</code></pre>
+<ul>
+<li>これで、何のエラーかがわかりやすくなりました。</li>
+</ul>
+<p class="image-container"><img style="width: 300.00px" src="img/63b65951f0c664c7.png"></p>
+<h2 is-upgraded>各技術の説明</h2>
+<p><strong>UIAlertController</strong></p>
+<ul>
+<li>アラートを表示するためのViewController。ViewControllerと同じく、<code>present()</code>によって呼び出す。</li>
+<li>ボタンを押した際に行う処理は、<code>UIAlertAction</code>内に記述する。</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="第八章 チャット画面を作ってみる" duration="0">
+        <h2 is-upgraded>概要</h2>
+<p>画像をシェアするためのチャット画面を、SwiftUIを使って作っていきます。</p>
+<h2 is-upgraded>本章で学ぶこと</h2>
+<ul>
+<li>SwiftUI</li>
+</ul>
+<h2 is-upgraded>完成イメージ</h2>
+<h2 is-upgraded>手順</h2>
+<p><strong>チャット画面まで遷移できるようにする</strong></p>
+<ul>
+<li>SwiftUIとは、SwiftでApple OSのアプリを作成する際に用いられる2種類のフレームワークのうち、よりモダンで利便性の高いものです。</li>
+<li>まずは、SwiftUIでの画面の作り方を簡単に学び、UIKitで書かれた画面から遷移するコードを記述します。</li>
+</ul>
+<ol type="1">
+<li><code>Presentation</code>ディレクトリに<code>ChatScene</code>ディレクトリを新たに追加し、<code>ChatCoordinator.swift</code>, さらに<code>Views</code>ディレクトリを作成しその配下に<code>ChatView.swift</code>を作成、それぞれに以下を記述する。</li>
+</ol>
+<pre><code>// ChatCoordinator.swift
+import SwiftUI
+
+final class ChatCoordinator {
+    // MARK: Private properties
+    private let navigationController: UINavigationController
+
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
+    }
+
+    func start() {
+        let view = UIHostingController(rootView: ChatView())
+        view.navigationItem.title = &#34;Chat&#34;
+        navigationController.pushViewController(view,
+                                                animated: true)
+    }
+}
+</code></pre>
+<pre><code>// ChatView.swift
+import SwiftUI
+
+struct ChatView: View {
+    var body: some View {
+        Text(&#34;Chat View&#34;)
+    }
+}
+</code></pre>
+<ul>
+<li>これで画面の真ん中に<code>Chat View</code>と書かれた画面が出来上がります。このようにSwiftUIはより宣言的にViewを作ることができます。詳しくは後述。</li>
+</ul>
+<ol type="1" start="2">
+<li><code>BaseTabCoordinator.swift</code>を以下に修正。</li>
+</ol>
+<pre><code>final class BaseTabCoordinator {
+    ...
+    private lazy var chatNavigationController: UINavigationController = {
+        let navigationController = UINavigationController()
+        setupNavigationViewController(navigationController)
+        navigationController.tabBarItem.title = &#34;Chat&#34;
+        navigationController.tabBarItem.image = UIImage(systemName: &#34;person.2.fill&#34;)
+        return navigationController
+    }()
+
+    private lazy var chatCoordinator: ChatCoordinator = {
+        let coordinator = ChatCoordinator(navigationController: chatNavigationController)
+        return coordinator
+    }()
+    ...
+    func start() {
+        let viewControllers = [imageListNavigationController, chatNavigationController] // &lt;-- 変更
+        rootViewController = BaseTabViewController.initialize(navigationControllers: viewControllers)
+        window.rootViewController = rootViewController
+        imageListCoordinator.start()
+        chatCoordinator.start() // &lt;-- 追加
+    }
+}
+</code></pre>
+<ul>
+<li>こうして、<code>Chat View</code>と書かれたViewが生成されたと思います。</li>
 </ul>
 
 
